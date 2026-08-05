@@ -459,12 +459,18 @@ Verified by the owner on the sandboxed build: a headset tap does not launch
 Music.app, the Control Center artwork and title appear, and Launch at Login
 registers. **Nothing about the app is degraded by the sandbox.**
 
-### Still unmeasured
+**M27. Keyboard media keys are unaffected.** Verified on a MacBookPro18,4 with
+the sandboxed build installed: F8 controls playback normally while the app holds
+the destination.
 
-- **Does a keyboard media key reach the sink?** Now largely moot: the sink
-  forwards everything, so a media key reaches whatever is actually playing, the
-  same as before the app existed. Control Center's play button uses the same
-  path and works. ADR 0003 risk 2. If it does,
+Expected, since the sink forwards everything, but it was the last claim resting
+on reasoning rather than measurement. Success criterion 3 is met.
+
+### Nothing left unmeasured
+
+Every success criterion in `README.md` has now been exercised on real hardware,
+across two machines (a desktop and a MacBookPro18,4) and both signing
+configurations. ADR 0003 risk 2. If it does,
   criterion 5 fails for as long as the destination is held.
 
 Criterion 1 passing does not clear this. A fix that stops Music launching while

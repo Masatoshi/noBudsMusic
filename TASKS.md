@@ -57,7 +57,7 @@ ADR 0001 is Rejected; every task here assumed a HID or event-tap path.
 
 - todo: Connect per-device rules to the blocking path
 - todo: Permission guidance end to end
-- todo: Validate the 14 success criteria on real hardware
+- done: Validate the success criteria on real hardware (two machines)
 
 ## Distribution (ADR 0002)
 
