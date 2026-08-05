@@ -57,9 +57,24 @@ struct ProofOfConceptView: View {
                 }
 
                 Section {
-                    Button("Play 1s of silence, then hold") {
-                        tone.play(seconds: 1.0)
+                    Button("1s, then stop") {
+                        tone.play(seconds: 1.0, then: .stop)
                         sink.activate()
+                        isHolding = sink.isHoldingDestination
+                    }
+                    Button("1s, then pause (keep the session)") {
+                        tone.play(seconds: 1.0, then: .pause)
+                        sink.activate()
+                        isHolding = sink.isHoldingDestination
+                    }
+                    Button("Loop silence") {
+                        tone.play(seconds: 1.0, then: .loop)
+                        sink.activate()
+                        isHolding = sink.isHoldingDestination
+                    }
+                    Button("Release the session", role: .destructive) {
+                        tone.release()
+                        sink.deactivate()
                         isHolding = sink.isHoldingDestination
                     }
                 } header: {
@@ -67,8 +82,10 @@ struct ProofOfConceptView: View {
                 } footer: {
                     Text(
                         """
-                        Only if variant 1 fails. Connect to CarPlay with the \
-                        destination held and see whether Music still launches.
+                        Stopping loses the slot on the next Play — measured. \
+                        Pausing is the state a real player holds it in, and is \
+                        untested. Looping certainly holds it and certainly \
+                        consumes the tap.
                         """
                     )
                 }

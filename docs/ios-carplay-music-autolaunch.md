@@ -306,6 +306,46 @@ app that will not play when told to play has no business holding the slot.
 So **a silent sink cannot work on iOS**, and no choice of return value rescues
 it. `.noSuchContent` and `.success` are popped alike.
 
+### Pausing holds the slot; stopping does not
+
+Tearing the engine down was the wrong comparison. A real player that is paused
+keeps its session and keeps the slot, and so does this app once it does the
+same — `player.pause()` with the engine left running:
+
+```text
+18:27:03.386  silence paused, engine still running
+              -- 38 seconds idle, no pop --
+18:27:41.352  play answered            <- the tap still reached this app
+18:27:46.338  Popping nowPlayingAppStack..
+```
+
+So there are two separate rules, and only the second is a problem:
+
+| | Slot while idle | After a Play it does not act on |
+| --- | --- | --- |
+| `stop` — engine torn down | lost | — |
+| `pause` — engine and session kept | **held, no decay in 38s** | popped after 5s |
+
+Idle retention was not measured beyond 38 seconds, and no decay was seen in
+that window.
+
+The return value makes no difference under either ending. `.success` and
+`.noSuchContent` were both tried with pausing and behaved identically, which is
+independent confirmation that the pop is caused by not playing rather than by
+the reply.
+
+### Why this may be enough for CarPlay
+
+**Connecting to a car is not a Play command.** The rule that costs the slot is
+answering Play without playing, and a CarPlay connection never asks. An app
+holding the slot paused should therefore still be holding it when the car
+connects — giving `com.apple.CarPlayApp` the candidate that stops it falling
+back to Music.
+
+What it gives up is the headset tap: tap once and the slot is gone five seconds
+later, and the next tap goes wherever it would have gone anyway. That is the
+case this investigation used as a stand-in, not the one it was for.
+
 ### What would hold the slot, and what it costs
 
 Playing real audio — a silent file, a generated buffer, anything that keeps the

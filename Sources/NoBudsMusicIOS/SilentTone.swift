@@ -18,10 +18,25 @@ final class SilentTone {
     private let player = AVAudioPlayerNode()
     private var isWired = false
 
-    /// Plays `seconds` of silence and stops. Errors are logged, not thrown:
-    /// every failure here is a result worth recording rather than an exception
-    /// to handle.
-    func play(seconds: Double = 1.0) {
+    /// Plays `seconds` of silence, then does whatever `then` says. Errors are
+    /// logged, not thrown: every failure here is a result worth recording
+    /// rather than an exception to handle.
+    ///
+    /// The three endings are three different experiments:
+    ///
+    /// - `.stop` tears the engine down. Measured: the app is popped off the Now
+    ///   Playing stack on the next Play command.
+    /// - `.pause` keeps the engine running and the session active, which is the
+    ///   state Audible was in while it held the slot. Untested here.
+    /// - `.loop` never stops, which certainly holds the slot and certainly
+    ///   consumes the tap.
+    enum Ending {
+        case stop
+        case pause
+        case loop
+    }
+
+    func play(seconds: Double = 1.0, then ending: Ending = .stop) {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default)
@@ -47,22 +62,49 @@ final class SilentTone {
             buffer.frameLength = frames
 
             try engine.start()
-            player.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
-                Task { @MainActor in self?.stop() }
+
+            switch ending {
+            case .loop:
+                player.scheduleBuffer(buffer, at: nil, options: [.loops])
+            case .stop, .pause:
+                player.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
+                    Task { @MainActor in
+                        if ending == .stop { self?.stop() } else { self?.pause() }
+                    }
+                }
             }
+
             player.play()
-            logger.notice("playing \(seconds, privacy: .public)s of silence")
+            logger.notice(
+                "playing \(seconds, privacy: .public)s of silence, then \(String(describing: ending), privacy: .public)"
+            )
         } catch {
             logger.error("silent tone failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    /// Stops playback but leaves the audio session active, because deactivating
-    /// it is one of the things that might cost the destination. Whether it does
-    /// is part of the experiment.
+    /// Stops playback and tears the engine down. The audio session is left
+    /// active deliberately — deactivating it is a second variable, and this
+    /// ending already loses the slot without it.
     func stop() {
         player.stop()
         engine.stop()
         logger.notice("silence stopped")
+    }
+
+    /// Pauses without tearing anything down: the engine keeps running and the
+    /// session stays active. This is the state a real player is in when it is
+    /// paused and still holding the Now Playing slot, which `stop()` is not.
+    func pause() {
+        player.pause()
+        logger.notice("silence paused, engine still running")
+    }
+
+    /// Releases everything, for when the app should stop occupying the slot.
+    func release() {
+        player.stop()
+        engine.stop()
+        try? AVAudioSession.sharedInstance().setActive(false)
+        logger.notice("audio session released")
     }
 }
