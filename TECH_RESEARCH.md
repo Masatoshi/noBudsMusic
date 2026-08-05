@@ -459,12 +459,14 @@ Verified by the owner on the sandboxed build: a headset tap does not launch
 Music.app, the Control Center artwork and title appear, and Launch at Login
 registers. **Nothing about the app is degraded by the sandbox.**
 
-**M27. Keyboard media keys are unaffected.** Verified on a MacBookPro18,4 with
-the sandboxed build installed: F8 controls playback normally while the app holds
-the destination.
+**M27. Keyboard media and volume keys are unaffected.** Verified on a
+MacBookPro18,4 with the sandboxed build installed, while the app held the
+destination: F8 controls playback normally, and F11/F12 change the volume.
 
-Expected, since the sink forwards everything, but it was the last claim resting
-on reasoning rather than measurement. Success criterion 3 is met.
+Play/Pause was the one at risk and it was the last claim resting on reasoning
+rather than measurement. Volume was never plausible — the app registers no
+volume command with `MPRemoteCommandCenter`, so those keys have no path to it —
+but confirming costs one keypress. Success criteria 3 and 5 are met.
 
 ### Nothing left unmeasured
 
