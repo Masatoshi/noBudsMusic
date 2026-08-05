@@ -435,6 +435,30 @@ Verified that a real player's information is shown normally whenever that player
 is playing, so success criterion 9 is met in the sense that matters: Now Playing
 is not broken, and the app is shown only when it genuinely is the destination.
 
+**M26. The mechanism survives the App Sandbox.** With
+`com.apple.security.app-sandbox` enabled and the app running from a container
+(`~/Library/Containers/jp.kaizudenki.noBudsMusic`):
+
+| Check | Result |
+| --- | --- |
+| Wins the Now Playing destination | **Yes** — took it from Chrome |
+| URL scheme reaches the running instance | Yes |
+| Single-instance handshake | Yes, one process survives |
+| `SMAppService` status readable | Yes, no error |
+| CPU at rest | 0.0% |
+
+The one mechanism that could have failed — `MPNowPlayingInfoCenter` winning the
+destination from inside a container — works. No app group was needed: the
+single-instance handshake was moved off `DistributedNotificationCenter` and onto
+the app's own URL scheme, which a sandboxed app can use freely.
+
+Note the sandbox relocates `UserDefaults` into the container, so settings start
+from defaults. That matters only if an unsandboxed build was ever shipped.
+
+Still needs the owner: a headset tap under the sandbox, the Control Center
+artwork, and registering the login item (a persistent system change, so not done
+unattended).
+
 ### Still unmeasured
 
 - **Does a keyboard media key reach the sink?** Now largely moot: the sink

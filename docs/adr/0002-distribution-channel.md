@@ -81,21 +81,22 @@ this decision:
   input" was a hard sell. "An app that registers as a Now Playing target so
   macOS stops launching Music" is a much more ordinary thing to describe.
 
-Still to measure before deciding, and none of it is speculative work — it is one
-build and one pass of the manual matrix:
+**Measured 2026-08-05 (M26): the sandbox is not a blocker.**
 
-1. Does `MPNowPlayingInfoCenter` still win the destination under the sandbox?
-   This is the one that could fail: it is the mechanism, and a sandboxed app may
-   be treated differently.
-2. Does `SMAppService.mainApp` still register the login item under the sandbox?
-   Expected yes.
-3. Does `DistributedNotificationCenter` still work for the single-instance
-   handshake? A sandboxed app needs an app-group-prefixed name, so this one
-   probably needs a change.
-4. Would App Review accept it? Not measurable locally.
+1. `MPNowPlayingInfoCenter` still wins the destination from inside a container.
+   This was the one that could have failed, and it does not.
+2. `SMAppService` status reads without error. Registration itself is untested —
+   it is a persistent system change and was left to the owner.
+3. `DistributedNotificationCenter` was the one real code change, and it was
+   removed rather than worked around: the single-instance handshake now goes
+   through the app's own URL scheme, which a sandboxed app can use freely and
+   which needs no app group. That simplified the code on both branches.
+4. App Review remains unmeasurable locally.
 
-Item 3 is the only known code change. Enable the sandbox, rebuild, run the
-matrix, record both results in `TECH_RESEARCH.md`, then decide.
+So the technical case for the store is clear. What is left is a judgement about
+review risk and about whether the store's distribution and update machinery is
+worth the submission overhead for a single-purpose utility, against simply
+publishing the source.
 
 The measurement for 1-3 is mechanical: enable `com.apple.security.app-sandbox`,
 rebuild, re-run the same manual matrix that the unsandboxed build passed, and

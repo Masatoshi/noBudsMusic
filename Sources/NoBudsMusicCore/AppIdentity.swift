@@ -15,9 +15,6 @@ public enum AppIdentity {
     /// `log stream --predicate 'subsystem == "<bundle id>"'` works.
     public static let logSubsystem = bundleIdentifier
 
-    /// Distributed notification asking a running instance to show its UI.
-    public static let showSettingsNotificationName = "\(bundleIdentifier).showSettings"
-
     /// URL scheme registered in `Info.plist`.
     public static let urlScheme = "nobudsmusic"
 }

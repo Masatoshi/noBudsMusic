@@ -14,7 +14,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: StatusItemController?
 
     private let logger = Logger(subsystem: AppIdentity.logSubsystem, category: "app")
-    private var showObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // A second copy would fight this one for the Now Playing destination.
@@ -32,13 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusItem?.refresh()
         }
 
-        // Route 1: another launch that yielded to this instance.
-        showObserver = SingleInstance.observeShow { [weak self] in
-            Task { @MainActor in self?.showMenuBarItem() }
-        }
-
-        // Route 3. Registered on the next run loop turn purely out of caution;
-        // the SwiftUI proxy that used to consume this event is gone.
+        // Registered on the next run loop turn purely out of caution; the
+        // SwiftUI proxy that used to consume this event is gone.
+        //
+        // This handles both the URL scheme and the handshake from a second
+        // launch that yielded to this instance — both arrive as the same event.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             NSAppleEventManager.shared().setEventHandler(
@@ -62,13 +59,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        if let showObserver {
-            DistributedNotificationCenter.default().removeObserver(showObserver)
-        }
         model.stop()
     }
 
-    /// Route 2: Finder or Spotlight re-launching the running instance.
+    /// Finder or Spotlight re-launching the running instance.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         showMenuBarItem()
         return false

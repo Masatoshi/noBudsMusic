@@ -11,10 +11,13 @@ import os
 /// This handles the cases where that does not apply: a copy launched from a
 /// different path, or `open -n`. Without it both instances would claim the Now
 /// Playing destination and fight over it.
+///
+/// The handshake goes through the app's own URL scheme rather than a
+/// distributed notification. Both reach the running instance, but a sandboxed
+/// app can only post distributed notifications under an app-group-prefixed
+/// name, which would mean provisioning an app group for one message. The URL
+/// route needs nothing.
 enum SingleInstance {
-    /// Posted to the running instance to ask it to show its menu bar item.
-    static let showNotification = Notification.Name(AppIdentity.showSettingsNotificationName)
-
     private static let logger = Logger(
         subsystem: AppIdentity.logSubsystem,
         category: "singleInstance"
@@ -43,24 +46,8 @@ enum SingleInstance {
     }
 
     /// Asks the running instance to show its menu bar item.
-    ///
-    /// Distributed notifications cross process boundaries; the app is not
-    /// sandboxed, so no app-group suffix is needed.
     static func requestShow() {
-        DistributedNotificationCenter.default().postNotificationName(
-            showNotification,
-            object: nil,
-            userInfo: nil,
-            deliverImmediately: true
-        )
-    }
-
-    /// Observes the request in the instance that stays alive.
-    static func observeShow(_ handler: @escaping @Sendable () -> Void) -> NSObjectProtocol {
-        DistributedNotificationCenter.default().addObserver(
-            forName: showNotification,
-            object: nil,
-            queue: .main
-        ) { _ in handler() }
+        guard let url = URL(string: "\(AppIdentity.urlScheme)://show") else { return }
+        NSWorkspace.shared.open(url)
     }
 }
