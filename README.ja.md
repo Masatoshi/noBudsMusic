@@ -48,8 +48,9 @@ YouTube をイヤホンから再開できなくなります。**この戻り値�
 
 macOS 14以降で動作する可能性がありますが、検証は macOS 26 / Apple Silicon のみです。
 
-署名済みのリリースはまだないので、動かすにはビルドが必要です。Xcode 26系と
-ビルドツール2つを使います。
+### ソースからビルド
+
+現時点で動作する唯一の方法です。Xcode 26系とビルドツール2つを使います。
 
 ```bash
 brew install just xcodegen
@@ -58,8 +59,30 @@ just run
 
 メニューバーに常駐します。ウィンドウも Dock アイコンもありません。
 
-ダウンロード配布がない理由と、それが変わる条件は
-[ADR 0002](docs/adr/0002-distribution-channel.md) にあります。
+### Homebrew
+
+Homebrew tap は公開済みです。
+
+```bash
+brew tap masatoshi/noBudsMusic
+brew install --cask no-buds-music
+```
+
+Homebrew 6系では非公式タップの読み込みに確認を求められることがあります。その場合は
+`brew trust --cask masatoshi/nobudsmusic/no-buds-music` を実行してください。
+
+**ただし現時点ではインストール後に起動できません。** リリース資産は Apple Development
+証明書で署名しただけで、notarization を通していません。Homebrew はダウンロードした
+アプリに `com.apple.quarantine` を付けるため、Gatekeeper が初回起動を拒否します。
+
+```text
+$ spctl -a -t exec NoBudsMusic.app
+NoBudsMusic.app: rejected
+origin=Apple Development: ...
+```
+
+Developer ID での署名と notarization を導入するまでは、上のビルド手順を使ってください。
+配布形態の判断は [ADR 0002](docs/adr/0002-distribution-channel.md) にあります。
 
 ## 使い方
 

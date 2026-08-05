@@ -240,6 +240,16 @@ and AirDrop do.
 That makes `rsync` a workable way to move a build between your own machines, and
 not a substitute for Developer ID plus notarization for anything else.
 
+Homebrew Cask applies quarantine to downloaded files. A cask whose checksum
+matches and whose download succeeds still produces an app that will not open:
+`open` returns 0 and no process appears. Measured against the real release
+artifact, not a simulation. Homebrew is not the obstacle — the signature is.
+
+`brew install --cask --no-quarantine` used to be the escape hatch. It was
+removed; on Homebrew 6.0.15 it is `Error: invalid option: --no-quarantine`.
+Notarization is the only route left that does not involve telling users to strip
+an attribute by hand.
+
 ## Build setup
 
 ### A framework target can fail ad-hoc signing

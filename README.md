@@ -51,8 +51,10 @@ Consequences:
 
 May work on macOS 14 and later; only tested on macOS 26 / Apple Silicon.
 
-There are no signed releases yet, so building it is the only way to run it. That
-needs Xcode 26 and two build tools:
+### Build from source
+
+Building from source is currently the only way to run it, and it needs
+Xcode 26 and two build tools:
 
 ```bash
 brew install just xcodegen
@@ -61,8 +63,32 @@ just run
 
 The app appears in the menu bar; there is no window and no Dock icon.
 
-See [ADR 0002](docs/adr/0002-distribution-channel.md) for why there is no
-download, and what would change that.
+### Homebrew
+
+The tap is published:
+
+```bash
+brew tap masatoshi/noBudsMusic
+brew install --cask no-buds-music
+```
+
+Homebrew 6 may ask you to trust a third-party tap before it will load the cask.
+If it does, run `brew trust --cask masatoshi/nobudsmusic/no-buds-music`.
+
+**It will not launch on first run after install, though.** The release is
+signed with an Apple Development certificate and has not been notarized.
+Homebrew attaches `com.apple.quarantine` to what it downloads, so Gatekeeper
+refuses the first launch:
+
+```text
+$ spctl -a -t exec NoBudsMusic.app
+NoBudsMusic.app: rejected
+origin=Apple Development: ...
+```
+
+Until the build is signed with a Developer ID and notarized, use the source
+build above. See [ADR 0002](docs/adr/0002-distribution-channel.md) for the
+distribution reasoning.
 
 ## Using it
 
