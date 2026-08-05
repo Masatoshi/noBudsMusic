@@ -187,6 +187,19 @@ Music.app起動そのものの追跡（`bluetoothd` / `mediaremoted`）:
 just logs-system
 ```
 
+### 別のMacに入れる
+
+``` bash
+just release
+just deploy <ホスト名>
+```
+
+`rsync` は quarantine 属性を付けないので Gatekeeper に止められない。
+**Development 証明書での署名**なので、ダウンロードやAirDrop経由だと止められる。
+配布するなら Developer ID + notarization が要る（`docs/adr/0002-distribution-channel.md`）。
+
+対象マシンに Xcode があるなら、リポジトリごと持っていって `just run` のほうが確実。
+
 その他のレシピは `just --list` を参照。
 
 ## 配布

@@ -10,6 +10,7 @@ config := "Debug"
 # `just run` and for CI artifact upload.
 derived := "build"
 app := derived + "/Build/Products/Debug/NoBudsMusic.app"
+release_app := derived + "/Build/Products/Release/NoBudsMusic.app"
 
 # Signing identity. Defaults to ad-hoc, which needs no setup but changes on
 # every rebuild — and TCC keys the Accessibility / Input Monitoring grants to
@@ -95,6 +96,31 @@ check: verify-identity lint build test
 # Remove build products and the generated project.
 clean:
     rm -rf {{project}} {{derived}}
+
+# --- Distribution ----------------------------------------------------------
+
+# The Debug bundle carries NoBudsMusic.debug.dylib and __preview.dylib and is
+# not portable.
+#
+# Build a Release .app, which is what should be copied anywhere.
+release: generate
+    xcodebuild -project {{project}} -scheme {{scheme}} -configuration Release \
+        -derivedDataPath {{derived}} \
+        CODE_SIGN_IDENTITY="{{sign_identity}}" DEVELOPMENT_TEAM="{{sign_team}}" \
+        build
+    @echo "built {{release_app}}"
+
+# rsync does not set the com.apple.quarantine attribute, so Gatekeeper will not
+# block the app there — which matters because it is signed with a *Development*
+# certificate, not Developer ID. The same app downloaded or AirDropped would be
+# blocked. Proper distribution needs Developer ID plus notarization; see
+# docs/adr/0002-distribution-channel.md.
+#
+# Copy the Release build to another Mac over ssh, e.g. `just deploy Cherry`.
+deploy host: release
+    rsync -a --delete {{release_app}} {{host}}:/Applications/
+    @echo "copied to {{host}}:/Applications/NoBudsMusic.app"
+    @echo "open it there once; it is a menu bar app with no window"
 
 # --- Run -------------------------------------------------------------------
 
