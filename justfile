@@ -43,6 +43,10 @@ signing:
 
 # Regenerate Resources/AppIcon.icns from the SF Symbol the app draws at runtime.
 # Committed output; run this after changing the glyph or colour.
+# The iOS icon, which must be opaque. Depends on `icon` having run.
+icon-ios: icon
+    xcrun swift Scripts/make-ios-icon.swift
+
 icon:
     mkdir -p {{derived}}
     xcrun swift Scripts/make-icon.swift

@@ -233,6 +233,79 @@ step before driving — launching the app, or something equivalent — and that 
 usability problem, not just an implementation detail. It is a reason to prefer
 the first variant beyond simplicity.
 
+## Measured with the proof of concept
+
+Run on the device 2026-08-05, iOS 27.0. Three results, and the third inverts the
+macOS design.
+
+### Declaring the state is not enough
+
+Setting `nowPlayingInfo` and `playbackState = .playing` with no audio — what the
+macOS app does, and what M12 measured sufficient there — does **not** make the
+app the destination on iOS. `mediaremoted` accepts the registration and logs the
+entitlement check, then routes elsewhere:
+
+```text
+mediaremoted: Retrieved application-identifier from SecTask:
+              applicationID=8KS5G58L37.jp.kaizudenki.noBudsMusic.poc
+mediaremoted: MRDLaunchApplicationWithReason<command<Play>> for com.audible.iphone
+```
+
+A tap launched Audible, the last app that had played. The proof of concept never
+received the command.
+
+That also refines the earlier finding. `mediaremoted` does not launch Music
+unconditionally when there is no destination — it launches **the last app that
+played**, and falls back to Music when there is none. Music appeared at 16:34
+because nothing else was recent.
+
+### A second of silence is enough to take it
+
+With the audio session active and one second of silence played, the app becomes
+the destination and the command reaches it:
+
+```text
+mediaremoted: setting nowPlayingApplicationPID to <6235>
+mediaremoted: Posting ...nowPlayingApplicationIsPlayingDidChange with <Playing>
+noBudsMusic PoC: [nowPlaying] play forwarded
+```
+
+No launch request was issued for that tap. So iOS reads the real playback state,
+not the declared one, and silence counts as playback. Neither duration nor
+volume is the variable — zero samples for one second was accepted.
+
+### Stopping gives it back, and `.noSuchContent` is what triggers that
+
+The app holds the destination only while it is playing. 1.4 seconds after the
+silence ended:
+
+```text
+mediaremoted: Posting ...nowPlayingApplicationIsPlayingDidChange with <Not Playing>
+```
+
+And then, on the next tap:
+
+```text
+17:53:23.226  Sending nowPlayingAppStackPopEligible
+17:53:23.235  Response: sendRemoteControlCommand returned with error ...
+              NoSuchContent
+17:53:28.236  [MediaServerNowPlayingDataSource] Popping nowPlayingAppStack..
+```
+
+iOS keeps a **stack** of Now Playing applications. Answering `.noSuchContent`
+marks the app pop-eligible, and five seconds later it is removed — revealing
+whatever was underneath, which is why Audible surfaced and played.
+
+**This is the opposite of what the return value does on macOS.** There it means
+"pass this on, I am staying"; the app keeps the destination indefinitely and
+that is the whole design (ADR 0003). On iOS the same value means "I have no
+content" and the system takes the slot away.
+
+So the macOS design does not port. On iOS, holding the destination costs
+continuous playback, and `.noSuchContent` actively gives it up. `.success` would
+not be popped, but M19 showed on macOS that it consumes the command and leaves
+real players uncontrollable; whether iOS behaves the same is not yet measured.
+
 ## Unaffected by this document
 
 Whether Apple Music is installed, subscribed, or signed in was not varied.

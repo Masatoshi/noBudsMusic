@@ -75,10 +75,21 @@ targets:
       - Sources/NoBudsMusicCore
       - Sources/NoBudsMusicShared
       - Sources/NoBudsMusicIOS
+      - path: Resources/Assets.xcassets
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.kaizudenki.noBudsMusic.poc
         PRODUCT_NAME: noBudsMusic PoC
+        # iOS needs a provisioning profile, so it cannot use the ad-hoc signing
+        # the macOS target relies on. These have to be set here rather than
+        # passed to xcodebuild: as command-line settings they do not override
+        # the manual style declared at project level, and provisioning fails
+        # with "No Account for Team".
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
+        DEVELOPMENT_TEAM: 8KS5G58L37
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
