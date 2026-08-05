@@ -360,20 +360,36 @@ What CarPlay acquired assertions on during the connection was only its own
 furniture — `CarRadio`, `CarPlayWallpaper`, `CarPlayTemplateUIHost`. At 17:00
 the same query returned `app<com.apple.Music>`.
 
-### The CarPlay grid still labels Music "Now Playing"
+### Confirmed in the car, and the slot lasts
 
-It did so both times, with and without the app holding the slot, and no audio
-plays when it says so. It is a label under the icon in the app grid, not a
-transport control.
+A second connection, 18:58:01, with the app holding the slot from a single
+button press **11 minutes and 40 seconds earlier**:
 
-So the label does not track the Now Playing destination that `mediaremoted`
-reports. A plausible reason is that the CarPlay grid can only label apps that
-are CarPlay-capable, and falls back to the default music app; Audible carries
-the entitlement and this proof of concept does not. That is a hypothesis — the
-drawing side is not in these captures.
+```text
+18:46:21  silence paused
+18:46:18  nowPlayingApplicationDisplayID to <private>   (unchanged from here)
+18:58:01  CarPlay connects — no Music launch, no audio
+```
 
-Either way it is cosmetic. What changed between the two connections is the
-launch and the audio, which is what the complaint was about.
+The CarPlay dashboard showed this app: its icon, "Music.app の自動起動を防止中"
+as the title, and transport controls.
+
+**The lock screen is not a readout of the slot.** The Now Playing widget stops
+showing the app after about ten minutes, which looks like expiry and is not —
+the destination was still this app twelve minutes on, and CarPlay displayed it.
+Anything measuring retention by watching the lock screen will get this wrong.
+
+Pressing play on the CarPlay transport does surface Music, on the rule above:
+the app answers without playing, is popped five seconds later, and Music is what
+is underneath. No audio plays. Not pressing it is the whole of the workaround.
+
+### The "Now Playing" tile was never Music
+
+Worth recording because it cost time. The CarPlay app grid has a tile labelled
+*再生中* — "Now Playing" — which is CarPlay's own built-in Now Playing app, not
+Apple Music. Seeing it while Music was the destination made it look like Music
+was being displayed as playing, and it is simply a standard tile that is always
+there.
 
 ### Why this may be enough for CarPlay
 
