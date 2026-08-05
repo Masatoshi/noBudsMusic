@@ -1,74 +1,46 @@
 # Implementation Tasks
 
-Status: done / partial / todo.
+Status: done / todo. The measurement history is in `TECH_RESEARCH.md` (M1-M27);
+the decisions are in `docs/adr/`.
 
-## Phase 1 - Skeleton
+## Done
 
-- done: Xcode project generated from `project.yml`
-- done: SwiftUI menu bar app, accessory activation policy
-- done: Global Status ON/OFF with persistence
-- done: Device identity model and stable identifier tiers
-- done: Per-device rule storage
-- done: Devices screen
-- done: Diagnostics screen, including permission status
-- done: Single-instance handling, URL scheme, reopen handling
-- done: Launch at login via ServiceManagement
+- Menu bar app in AppKit, resident, no Dock icon, no windows
+- Enabled toggle, menu bar visibility, launch at login, all persisted
+- Occupy the Now Playing destination and forward every command (ADR 0003)
+- English and Japanese localisation
+- App icon, menu bar glyph and Control Center artwork from one SF Symbol
+- Single instance, with three routes back when the menu bar item is hidden
+- App Sandbox enabled and verified to change nothing (M26)
+- Success criteria exercised on two machines, including keyboard media keys
 
-## Phase 2 - Observation
+## Abandoned, with evidence
 
-- done: Enumerate HID devices with IOHIDManager
-- done: Populate the Devices screen from live enumeration
-- done: Log Consumer Control input with source device, usage page, usage
-  (monitor running and observing 1 device; no input observed yet)
-- done: Observe Pixel Buds A-Series — no HID device, no HID input
-- done: Record the result in `TECH_RESEARCH.md` (M1-M11)
+Kept here because the reasons matter more than the outcomes.
 
-## Phase 3 - Void
+- HID interception via IOHIDManager, CGEventTap, `kIOHIDOptionsTypeSeizeDevice`
+  or DriverKit — the event never reaches any of them (M11, ADR 0001)
+- Per-device blocking rules — MediaRemote carries no device identity, so this is
+  impossible rather than descoped (M11, ADR 0003)
+- Consuming the command with `.success` — prevents the launch but makes real
+  players uncontrollable (M19)
+- Declaring `.paused` — never chosen as the destination, so no protection (M21)
+- Gating on audio activity — `IsRunningOutput` means "has a stream", not "is
+  playing" (M23)
 
-ADR 0001 is Rejected; every task here assumed a HID or event-tap path.
+## Open
 
-- n/a: Attribute an event to a device
-- n/a: Block with CGEventTap
-- n/a: Determine whether CGEventTap can attribute a source
-- n/a: Consumer Control interface-level exclusive access
-- n/a: `kIOHIDOptionsTypeSeizeDevice` and its side effects
-- done: Decide ADR 0001 — Rejected
+- Decide ADR 0002: Mac App Store or open source with direct distribution. The
+  technical case is settled; what remains is review risk versus submission
+  overhead.
+- Developer ID signing and notarization, if distributing directly. The app is
+  currently signed with a development certificate, which is fine for machines it
+  is copied to over `rsync` but not for anything downloaded.
+- English `README.md`, if the repository becomes public.
 
-## Now Playing sink (ADR 0003)
+## Not planned
 
-- done: Claim the destination with public API (M12)
-- done: Release and reclaim on Status toggle (M13)
-- done: Absorb the headset tap; Music.app does not launch (M15)
-- done: Real players take the destination back without interference (M17)
-- todo: **Reclaim the destination when it becomes free** (M18) — without
-  stealing it from a playing app
-- todo: Verify a keyboard media key is not swallowed (ADR 0003 risk 2)
-- todo: Decide what Control Center should display (M14)
-
-## Next - needs an owner decision
-
-- todo: Decide whether to pursue the Now Playing destination approach, given
-  that it cannot support per-device rules
-- todo: If pursued, measure whether a fallback-only destination is possible
-  (absorbing the launch-causing command without absorbing keyboard and Control
-  Center commands)
-
-## Phase 4 - Integration
-
-- todo: Connect per-device rules to the blocking path
-- todo: Permission guidance end to end
-- done: Validate the success criteria on real hardware (two machines)
-
-## Distribution (ADR 0002)
-
-The app works, so this is now actionable.
-
-- done: Enable `com.apple.security.app-sandbox`, rebuild, run the matrix
-- done: `MPNowPlayingInfoCenter` still wins the destination sandboxed (M26)
-- done: `DistributedNotificationCenter` removed rather than app-group-prefixed;
-  the handshake goes through the URL scheme
-- done: `SMAppService` login item registers sandboxed
-- done: Headset tap, Control Center artwork verified on the sandboxed build
-- todo: Decide ADR 0002 (App Store vs OSS on GitHub)
-- todo: Signing for the chosen channel
-- todo: If GitHub, translate `README.md` to English
+- Reclaiming the destination on a schedule. The app is passive by design; a
+  timer would cost the property that makes it better than the alternatives.
+- A diagnostics window. `just logs` carries strictly more, and a window in this
+  app cost three days of CPU spins.
