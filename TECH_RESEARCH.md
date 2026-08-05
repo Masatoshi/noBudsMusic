@@ -425,11 +425,22 @@ Answering `.success` prevents the launch too, but consumes the command, which is
 what made real players uncontrollable (M19). The entire design turns on this one
 return value.
 
+**M25. Appearing in Control Center is unavoidable.** While the app holds the
+slot — which is only when nothing else is playing — Control Center lists it.
+Omitting `MPMediaItemPropertyTitle` does not hide it; the display falls back to
+the app name. The title therefore says what the app is doing rather than just
+naming it.
+
+Verified that a real player's information is shown normally whenever that player
+is playing, so success criterion 9 is met in the sense that matters: Now Playing
+is not broken, and the app is shown only when it genuinely is the destination.
+
 ### Still unmeasured
 
 - **Does a keyboard media key reach the sink?** Now largely moot: the sink
   forwards everything, so a media key reaches whatever is actually playing, the
-  same as before the app existed. Worth confirming once. ADR 0003 risk 2. If it does,
+  same as before the app existed. Control Center's play button uses the same
+  path and works. ADR 0003 risk 2. If it does,
   criterion 5 fails for as long as the destination is held.
 
 Criterion 1 passing does not clear this. A fix that stops Music launching while

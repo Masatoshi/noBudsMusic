@@ -9,3 +9,6 @@
 
 /* Tooltip on the main toggle */
 "help.block" = "Holds the Now Playing slot so macOS has somewhere to send Play / Pause. Commands are passed on to whatever is actually playing.";
+
+/* Shown in Control Center while this app holds the Now Playing slot */
+"nowPlaying.title" = "Preventing Music.app from launching";

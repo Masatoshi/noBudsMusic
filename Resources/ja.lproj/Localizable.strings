@@ -9,3 +9,6 @@
 
 /* Tooltip on the main toggle */
 "help.block" = "Now Playing の宛先を占有し、macOS が Play / Pause を送る先を確保します。コマンドは実際に再生中のアプリへ転送されます。";
+
+/* Control Center に表示される、宛先を占有中であることの説明 */
+"nowPlaying.title" = "Music.app の自動起動を防止中";

@@ -54,8 +54,18 @@ final class NowPlayingSink {
         // `.playing` used to steal control from real players, but that was a
         // consequence of answering `.success`, not of the state itself — with
         // `.noSuchContent` they take the destination back as soon as they play.
+        // Control Center shows this app whenever nothing else is playing, and
+        // that cannot be avoided: occupying the Now Playing slot means
+        // appearing in Now Playing. Measured — omitting the title only falls
+        // back to the app name, so the choice is what the line says, not
+        // whether it appears.
+        //
+        // Given that, it says what the app is doing rather than just its name.
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
-            MPMediaItemPropertyTitle: "noBudsMusic",
+            MPMediaItemPropertyTitle: NSLocalizedString(
+                "nowPlaying.title",
+                comment: "Shown in Control Center while holding the slot"
+            ),
             MPNowPlayingInfoPropertyPlaybackRate: 0.0,
             MPMediaItemPropertyPlaybackDuration: 0.0,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
