@@ -10,6 +10,8 @@ options:
     # Silicon (README.md). The deployment target is lower so the pure-logic
     # module and its tests build on ordinary CI runners.
     macOS: "14.0"
+    # The iOS target is a proof of concept only; measured on iOS 27.0.
+    iOS: "17.0"
 
 settings:
   base:
@@ -44,6 +46,7 @@ targets:
     platform: macOS
     sources:
       - Sources/NoBudsMusic
+      - Sources/NoBudsMusicShared
       - path: Resources/AppIcon.icns
         buildPhase: resources
       - path: Resources/en.lproj
@@ -61,6 +64,28 @@ targets:
       testTargets:
         - NoBudsMusicCoreTests
       gatherCoverageData: true
+
+  # Proof of concept for ADR 0004. It compiles the Core sources directly rather
+  # than linking a second static library: one experiment does not justify making
+  # Core multi-platform, and the sources are Foundation-only anyway.
+  NoBudsMusicIOS:
+    type: application
+    platform: iOS
+    sources:
+      - Sources/NoBudsMusicCore
+      - Sources/NoBudsMusicShared
+      - Sources/NoBudsMusicIOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: jp.kaizudenki.noBudsMusic.poc
+        PRODUCT_NAME: noBudsMusic PoC
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # Needed only by variant 2. Declaring it does not start an audio
+        # session; nothing plays until the button is pressed.
+        INFOPLIST_KEY_UIBackgroundModes: audio
+        TARGETED_DEVICE_FAMILY: "1"
 
   NoBudsMusicCoreTests:
     type: bundle.unit-test

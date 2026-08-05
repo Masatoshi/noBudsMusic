@@ -1,8 +1,18 @@
-import AppKit
 import Foundation
 import MediaPlayer
-import NoBudsMusicCore
 import os
+
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
+
+// The iOS target compiles the Core sources directly rather than linking a
+// second static library, so on that platform these types are already in scope.
+#if canImport(NoBudsMusicCore)
+import NoBudsMusicCore
+#endif
 
 /// Occupies the Now Playing destination so `mediaremoted` never has to launch a
 /// player, and forwards every command it receives.
@@ -30,8 +40,13 @@ final class NowPlayingSink {
 
     private var isActive = false
     private var handlers: [(MPRemoteCommand, Any)] = []
+    private var forwarded = 0
 
     var isHoldingDestination: Bool { isActive }
+
+    /// Commands forwarded since launch. The log is the real record; this exists
+    /// so the iOS proof of concept can show something on screen in a car.
+    var forwardedCommandCount: Int { forwarded }
 
     // MARK: - Lifecycle
 
@@ -122,6 +137,31 @@ final class NowPlayingSink {
     /// Red because this is the one state where the app is doing something, and
     /// because a monochrome note would be indistinguishable from a real track
     /// with missing artwork.
+    #if canImport(UIKit)
+    nonisolated private static func renderNote() -> UIImage {
+        let size = CGSize(width: 512, height: 512)
+        let configuration = UIImage.SymbolConfiguration(
+            pointSize: min(size.width, size.height) * 0.62,
+            weight: .medium
+        )
+        .applying(UIImage.SymbolConfiguration(paletteColors: [.systemRed]))
+
+        let note = UIImage(systemName: "music.note", withConfiguration: configuration)
+
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            guard let note else { return }
+            let noteSize = note.size
+            note.draw(
+                in: CGRect(
+                    x: (size.width - noteSize.width) / 2,
+                    y: (size.height - noteSize.height) / 2,
+                    width: noteSize.width,
+                    height: noteSize.height
+                )
+            )
+        }
+    }
+    #else
     nonisolated private static func renderNote() -> NSImage {
         let size = CGSize(width: 512, height: 512)
         let image = NSImage(size: size)
@@ -150,12 +190,14 @@ final class NowPlayingSink {
         )
         return image
     }
+    #endif
 
     // MARK: - Commands
 
     private func register(_ command: MPRemoteCommand, key: MediaKey) {
         command.isEnabled = true
         let token = command.addTarget { [weak self] _ in
+            self?.forwarded += 1
             self?.logger.notice("\(key.rawValue, privacy: .public) forwarded")
             // Never `.success`. See the note on this type.
             return .noSuchContent
