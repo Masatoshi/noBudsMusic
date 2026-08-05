@@ -177,17 +177,27 @@ directly, without asking `mediaremoted` whether a destination exists.
 
 ### What that does and does not rule out
 
-It rules out the explanation. It does not yet rule out the fix.
+It rules out the explanation. It does not rule out the fix, and there is
+behavioural evidence that the fix is the right shape.
 
-`com.apple.CarPlayApp` presumably launches *something* to fill its Now Playing
-screen, and Music is what it picks when nothing else is a candidate. Whether it
-would pick an app that already holds the destination is a different question,
-and one the proof of concept can still answer — by holding the destination
-before connecting and seeing which app CarPlay brings up.
+**CarPlay does not launch Music when something else is already playing.** With a
+YouTube tab going, connecting produces no Music. This is well enough known that
+the common workaround is to make Spotify the app you last played from. So
+`com.apple.CarPlayApp` is not launching Music unconditionally — it is filling
+its Now Playing screen, and Music is the default when there is no candidate.
 
-That is now the experiment. The reasoning behind it has changed: it is no longer
-"occupy the slot so no launch is requested", because no launch is requested. It
-is "occupy the slot and see whether CarPlay chooses differently."
+That matches the capture: Music was launched, displayed as playing, and produced
+no audio. It was put there to be shown, not to play.
+
+So the fix is still "occupy the slot", but for a different reason than this
+document originally gave. Not *so that no launch is requested* — none is. It is
+so that CarPlay finds a candidate and does not fall back to its default.
+
+The open part is what counts as a candidate. The evidence above is from apps
+that are genuinely playing audio. This app declares `.playing` and produces
+none. Whether that is enough is exactly what variant 1 tests, and the case for
+variant 2 — a real second of silence — is that it makes the app
+indistinguishable from the YouTube tab that is already known to work.
 
 ## How to answer question 1
 

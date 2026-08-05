@@ -89,11 +89,13 @@ through the App Store. No user-facing setting maps to it.
 - The open questions stay in `docs/ios-carplay-music-autolaunch.md`. Whether a
   third-party app can hold the destination on iOS without playing audio still
   gates the headset case.
-- The CarPlay case has no candidate fix. Occupying the destination was the plan,
-  and the measurement shows CarPlay never consults it. What remains is a weaker
-  guess — that `com.apple.CarPlayApp` picks Music because nothing else is a
-  candidate, and might pick an app that already holds the destination. That is
-  worth one test in a car and should not be described as more than it is.
+- The CarPlay case keeps the same fix for a different reason. No launch request
+  is issued, so "occupy the slot so none is issued" is the wrong account of it.
+  But CarPlay does not launch Music when something else is already playing —
+  the known workaround is to make Spotify the app you last played from — so it
+  is choosing a candidate and defaulting to Music when it finds none. Occupying
+  the slot is still the right shape; what is untested is whether an app that
+  declares `.playing` without producing audio counts as a candidate.
 - If iOS does turn out to need background audio, an audio session and a CarPlay
   entitlement, that is the point to revisit option A — with the divergence
   measured instead of predicted.
