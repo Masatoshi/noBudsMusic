@@ -4,6 +4,10 @@ Bluetoothイヤホンをタップしたときに、意図しない Music.app の
 
 [English](README.md)
 
+<p align="center">
+  <img src="docs/images/control-center-icon.svg" width="128" alt="noBudsMusic の Control Center アイコン">
+</p>
+
 ## 問題
 
 macOS 26系では、何も再生していない状態でBluetoothイヤホンをタップすると、意図して
@@ -21,7 +25,7 @@ mediaremoted: Destination app com.apple.Music not available for command
 
 **このアプリは何も遮断しません。**
 
-Play/Pause を横取りせず、ただ Now Playing の参照先として振る舞います。
+Play/Pause を横取りせず、Now Playing の参照先として振る舞います。
 
 タップは `bluetoothd` から MediaRemote コマンドとして `mediaremoted` に届き、Now
 Playing の参照先へルーティングされます。参照先が存在しないとき、macOS はプレイヤーを
@@ -40,7 +44,7 @@ YouTube をイヤホンから再開できなくなります。**この戻り値�
 - **App Sandbox 内で完結するため、追加権限は不要です。** アクセシビリティも入力監視も
   イベントタップも使いません
 - **ポーリングをしません。** タイマーも監視ループもなく、コマンドが来たときだけ動きます
-- **メディアキーも音量キーも影響を受けません。** `.noSuchContent` を返すだけだからです
+- **メディアキーも音量キーも影響を受けません。** `.noSuchContent` を返すだけなので、既存の動作は変わりません
 - **デバイスごとの設定は持てません。** MediaRemote コマンドに送信元の識別情報がなく、
   すべて `com.apple.bluetoothd` として届くため原理的に不可能です
 
@@ -144,7 +148,7 @@ Redmi Buds 6 Lite と Pixel Buds A-Series、実機2台で確認しました。
 ## 開発
 
 プロジェクト定義の正本は `project.yml` です。`noBudsMusic.xcodeproj` はそこから
-生成されるため、リポジトリには含めていません。ビルド系のコマンドが毎回生成します。
+生成されるため、リポジトリには含めていません。`just` のビルドコマンド実行時に毎回生成されます。
 
 ```bash
 just check   # lint, build, test
