@@ -5,10 +5,6 @@ Bluetoothイヤホンをタップしたときに、意図しない Music.app の
 
 [English](README.md)
 
-<p align="center">
-  <img src="docs/images/control-center-icon.svg" width="128" alt="noBudsMusic の Control Center アイコン">
-</p>
-
 ## 問題
 
 macOS 26系では、何も再生していない状態でBluetoothイヤホンをタップすると、意図して
