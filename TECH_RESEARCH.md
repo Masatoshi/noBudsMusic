@@ -379,8 +379,39 @@ No `requested a launch` appears in the log after 10:23:09, which predates the
 sink entirely — so this was most likely a manual launch, not a recurrence. Worth
 confirming with the owner before treating it as either.
 
+**M23. `IsRunningOutput` means "has an output stream", not "is playing".**
+The audio gating signal does not work.
+
+With YouTube **paused**, `com.google.Chrome.helper` reported
+`runningOutput = 1` continuously for two minutes. Chrome holds its output stream
+open indefinitely while paused, so the app read "something is playing" and never
+claimed the destination. Music.app launched four times during that window
+(`requested a launch` x4). The device-level property agrees with the per-process
+one, so neither form distinguishes a paused browser tab from playback.
+
+The deeper problem: the signal the app needs is **"does anyone hold the Now
+Playing destination"**, and audio output is a poor proxy for it. Chrome held the
+audio stream while *not* holding the destination — the two are decoupled, and
+only the second one matters. The API that reports the holder
+(`MRMediaRemoteGetNowPlayingApplicationPID`) is private.
+
+### Where that leaves the sink
+
+| Approach | A player is present | Nothing playing |
+| --- | --- | --- |
+| `.playing`, always | Steals the destination (M19) | Prevents the launch (M15) |
+| `.paused`, always | Yields correctly (M20) | Music.app launches (M21) |
+| `.playing`, gated on audio activity | Yields correctly | Music.app launches (M23) |
+
+Three forms measured, none correct in both columns.
+
 ### Still unmeasured
 
+- **Does returning `.noSuchContent` for Play fall through to the next player
+  without launching Music?** If it does, the sink could hold the destination
+  permanently and still let real players be controlled. `NextTrack` is already
+  forwarded that way and no launch followed it — suggestive, but not the same
+  command.
 - **Does a keyboard media key reach the sink?** ADR 0003 risk 2. If it does,
   criterion 5 fails for as long as the destination is held.
 
