@@ -21,17 +21,15 @@ Disabling `com.apple.rcd` does not help.
 
 **This app blocks nothing.**
 
+It does not intercept Play/Pause. It simply acts as the Now Playing destination.
+
 `bluetoothd` sends the tap to `mediaremoted` as a MediaRemote command, which
-routes it to whatever holds the Now Playing destination — and launches a player
-when there is no destination. That is what leads to Music.app opening by itself.
+routes it to the Now Playing destination. When there is no destination, macOS
+launches a player. That is what leads to Music.app opening by itself.
 
-This app becomes the Now Playing destination and touches nothing else. Every
-command it receives is answered with `.noSuchContent`:
-
-```text
-something is playing   → mediaremoted passes the command to it, as normal
-nothing is playing     → the command goes nowhere, and no launch is requested
-```
+Once this app is the destination, there is no such case, so no launch is
+requested. Every command it receives is answered with `.noSuchContent`, so
+whatever is actually playing still gets it.
 
 Answering `.success` would also prevent the launch, but it consumes the command,
 and then a paused YouTube tab can no longer be resumed from the headset. That one
@@ -40,12 +38,12 @@ measurement before it.
 
 Consequences:
 
-- **No additional permissions.** No Accessibility, no Input Monitoring, no event
-  tap.
+- **Runs entirely within the App Sandbox, so no additional permissions are
+  needed.** No Accessibility, no Input Monitoring, no event tap.
 - **No polling.** No timer and no observer loop; the app is woken only when a
   command arrives.
-- **Runs entirely within the App Sandbox.**
-- **Media and volume keys are unaffected**, because everything is forwarded.
+- **Media and volume keys are unaffected**, because it only ever answers
+  `.noSuchContent`.
 - **No per-device settings**, and there cannot be: a MediaRemote command carries
   no device identity. Every headset arrives as `com.apple.bluetoothd`.
 
