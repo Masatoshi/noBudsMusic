@@ -334,6 +334,47 @@ The return value makes no difference under either ending. `.success` and
 independent confirmation that the pop is caused by not playing rather than by
 the reply.
 
+### Measured in the car: it works
+
+Same car, 2026-08-05. The app was left holding the slot paused, and CarPlay
+connected at 18:35:15 and disconnected at 18:35:50. **Music was not launched and
+nothing played.**
+
+| | 17:00, no app | 18:35, slot held |
+| --- | --- | --- |
+| `runningboardd` assertion on `com.apple.Music` from `CarPlayApp` | yes | **no** |
+| `mediaremoted` mentions of `com.apple.Music` in the window | many | **0** |
+| Audio | started | **none** |
+
+The slot was this app's at connect time. `nowPlayingApplicationDisplayID` was
+last set at 18:33:49 and stayed put — third-party bundles are redacted in that
+field, so `<private>` is this app where `com.apple.Music` had been shown before:
+
+```text
+18:33:36  nowPlayingApplicationDisplayID to <com.apple.Music>
+18:33:49  nowPlayingApplicationDisplayID to <private>
+18:35:15  CarPlay connects
+```
+
+What CarPlay acquired assertions on during the connection was only its own
+furniture — `CarRadio`, `CarPlayWallpaper`, `CarPlayTemplateUIHost`. At 17:00
+the same query returned `app<com.apple.Music>`.
+
+### The CarPlay grid still labels Music "Now Playing"
+
+It did so both times, with and without the app holding the slot, and no audio
+plays when it says so. It is a label under the icon in the app grid, not a
+transport control.
+
+So the label does not track the Now Playing destination that `mediaremoted`
+reports. A plausible reason is that the CarPlay grid can only label apps that
+are CarPlay-capable, and falls back to the default music app; Audible carries
+the entitlement and this proof of concept does not. That is a hypothesis — the
+drawing side is not in these captures.
+
+Either way it is cosmetic. What changed between the two connections is the
+launch and the audio, which is what the complaint was about.
+
 ### Why this may be enough for CarPlay
 
 **Connecting to a car is not a Play command.** The rule that costs the slot is

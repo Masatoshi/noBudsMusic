@@ -77,6 +77,12 @@ targets:
       - Sources/NoBudsMusicIOS
       - path: Resources/Assets.xcassets
         buildPhase: resources
+      # Without these, NSLocalizedString returns the key and Control Center and
+      # CarPlay show "nowPlaying.title" as the track name.
+      - path: Resources/en.lproj
+        buildPhase: resources
+      - path: Resources/ja.lproj
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.kaizudenki.noBudsMusic.poc
