@@ -44,6 +44,10 @@ targets:
     platform: macOS
     sources:
       - Sources/NoBudsMusic
+      - path: Resources/en.lproj
+        buildPhase: resources
+      - path: Resources/ja.lproj
+        buildPhase: resources
     dependencies:
       - target: NoBudsMusicCore
     settings:

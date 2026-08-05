@@ -25,7 +25,7 @@ a running app or a paired headset.
 
 1. `MPRemoteCommandCenter` delivers a command.
 2. `EventFilter` decides: Status ON and Play/Pause -> absorb, otherwise forward.
-3. `DiagnosticsLog` records the decision and its reason.
+3. `NowPlayingSink` logs the decision and its reason.
 4. The handler returns `.success` (absorbed) or `.noSuchContent` (forwarded).
 
 No device dimension exists at any step. MediaRemote does not carry one.
@@ -37,14 +37,11 @@ No device dimension exists at any step. MediaRemote does not carry one.
 | App entry, menu bar | `Sources/NoBudsMusic/NoBudsMusicApp.swift` |
 | App state | `Sources/NoBudsMusic/AppModel.swift` |
 | The mechanism | `Sources/NoBudsMusic/NowPlayingSink.swift` |
-| Diagnostics screen | `Sources/NoBudsMusic/Views/DiagnosticsView.swift` |
-| Settings window host | `Sources/NoBudsMusic/Views/SettingsWindowController.swift` |
 | Single instance | `Sources/NoBudsMusic/SingleInstance.swift` |
 | Launch at login | `Sources/NoBudsMusic/LaunchAtLogin.swift` |
 | Decision rule | `Sources/NoBudsMusicCore/EventFilter.swift` |
 | Command vocabulary | `Sources/NoBudsMusicCore/MediaKey.swift` |
 | App settings | `Sources/NoBudsMusicCore/AppSettings.swift` |
-| Diagnostics log | `Sources/NoBudsMusicCore/DiagnosticsLog.swift` |
 | Identity | `Sources/NoBudsMusicCore/AppIdentity.swift` |
 
 ## Removed
@@ -61,3 +58,11 @@ advantage over noTunes and must not be spent on a polling fix for M18.
 
 **No permissions.** `MPRemoteCommandCenter` is not gated by TCC. The app needs
 neither Accessibility nor Input Monitoring.
+
+**No windows.** The app is a menu bar item and nothing else. Diagnostics live in
+`just logs`. A SwiftUI-hosted window in a `MenuBarExtra`-only app was one of two
+ways found to pin the main thread; the other was persisting an unchanged value
+from a binding. See `docs/macos-notes.md`.
+
+**Localised.** English base, Japanese in `Resources/ja.lproj`. Menu strings are
+keys, not literals.

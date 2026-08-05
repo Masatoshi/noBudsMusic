@@ -1,37 +1,28 @@
 import Foundation
 
-/// User-visible settings, mirroring the menu bar items in `README.md`.
+/// User-visible settings, mirroring the menu bar items.
 ///
 /// Named `AppSettings` rather than `Settings` because `SwiftUI.Settings` is a
 /// scene type and the bare name is ambiguous in the app target.
 public struct AppSettings: Sendable, Equatable {
-    /// Status ON/OFF. When OFF the app stays resident but suppresses nothing.
+    /// Whether the app holds the Now Playing destination and discards
+    /// Play/Pause. Off means it releases the destination entirely.
     public var isEnabled: Bool
     /// Whether the menu bar item is shown. The app keeps running when hidden.
     public var showsMenuBarItem: Bool
     /// Launch at login (SMAppService).
     public var launchesAtLogin: Bool
-    /// Whether observed events are recorded for the Diagnostics screen.
-    /// Never affects the blocking decision itself.
-    public var diagnosticsLoggingEnabled: Bool
 
     public static let `default` = AppSettings(
         isEnabled: true,
         showsMenuBarItem: true,
-        launchesAtLogin: false,
-        diagnosticsLoggingEnabled: true
+        launchesAtLogin: false
     )
 
-    public init(
-        isEnabled: Bool,
-        showsMenuBarItem: Bool,
-        launchesAtLogin: Bool,
-        diagnosticsLoggingEnabled: Bool
-    ) {
+    public init(isEnabled: Bool, showsMenuBarItem: Bool, launchesAtLogin: Bool) {
         self.isEnabled = isEnabled
         self.showsMenuBarItem = showsMenuBarItem
         self.launchesAtLogin = launchesAtLogin
-        self.diagnosticsLoggingEnabled = diagnosticsLoggingEnabled
     }
 }
 
@@ -45,7 +36,6 @@ public enum SettingsKey {
     public static let isEnabled = "noBudsMusic.isEnabled"
     public static let showsMenuBarItem = "noBudsMusic.showsMenuBarItem"
     public static let launchesAtLogin = "noBudsMusic.launchesAtLogin"
-    public static let diagnosticsLoggingEnabled = "noBudsMusic.diagnosticsLoggingEnabled"
 }
 
 public final class UserDefaultsSettingsStore: SettingsStoring, @unchecked Sendable {
@@ -65,10 +55,6 @@ public final class UserDefaultsSettingsStore: SettingsStoring, @unchecked Sendab
             launchesAtLogin: value(
                 for: SettingsKey.launchesAtLogin,
                 default: AppSettings.default.launchesAtLogin
-            ),
-            diagnosticsLoggingEnabled: value(
-                for: SettingsKey.diagnosticsLoggingEnabled,
-                default: AppSettings.default.diagnosticsLoggingEnabled
             )
         )
     }
@@ -77,10 +63,6 @@ public final class UserDefaultsSettingsStore: SettingsStoring, @unchecked Sendab
         defaults.set(settings.isEnabled, forKey: SettingsKey.isEnabled)
         defaults.set(settings.showsMenuBarItem, forKey: SettingsKey.showsMenuBarItem)
         defaults.set(settings.launchesAtLogin, forKey: SettingsKey.launchesAtLogin)
-        defaults.set(
-            settings.diagnosticsLoggingEnabled,
-            forKey: SettingsKey.diagnosticsLoggingEnabled
-        )
     }
 
     /// `UserDefaults.bool(forKey:)` returns `false` for a missing key, which

@@ -1,51 +1,28 @@
 import Foundation
 import NoBudsMusicCore
 import Observation
-import SwiftUI
 
-/// Owns settings and the diagnostics log, and wires them to the UI.
+/// Owns settings and the sink.
 ///
 /// Deliberately thin: the decision rule lives in `NoBudsMusicCore.EventFilter`
-/// and the mechanism in `NowPlayingSink`. This type only connects them.
+/// and the mechanism in `NowPlayingSink`.
 @MainActor
 @Observable
 final class AppModel {
     private let settingsStore: SettingsStoring
-    let diagnostics: DiagnosticsLog
-
-    /// The whole mechanism. Absent only in tests.
     private let sink: NowPlayingSink?
 
     private(set) var settings: AppSettings
-    private(set) var recentEvents: [DiagnosticsEntry] = []
 
-    /// Whether the app currently holds the Now Playing destination — the only
-    /// thing that suppresses a launch.
-    ///
-    /// Not always equal to `settings.isEnabled`: a real player takes the
-    /// destination back when it starts (`TECH_RESEARCH.md` M17), and the app
-    /// does not currently reclaim it afterwards (M18).
-    var isHoldingNowPlaying: Bool { sink?.isHoldingDestination ?? false }
-
-    init(
-        settingsStore: SettingsStoring = UserDefaultsSettingsStore(),
-        diagnostics: DiagnosticsLog? = nil,
-        installsSink: Bool = true
-    ) {
-        let loaded = settingsStore.load()
-        let log = diagnostics ?? DiagnosticsLog(isEnabled: loaded.diagnosticsLoggingEnabled)
+    init(settingsStore: SettingsStoring = UserDefaultsSettingsStore(), installsSink: Bool = true) {
         self.settingsStore = settingsStore
-        self.settings = loaded
-        self.diagnostics = log
-        self.sink = installsSink ? NowPlayingSink(diagnostics: log) : nil
+        self.settings = settingsStore.load()
+        self.sink = installsSink ? NowPlayingSink() : nil
     }
 
     // MARK: - Lifecycle
 
     func start() {
-        sink?.onEvent = { [weak self] _ in
-            self?.refreshDiagnostics()
-        }
         sink?.setEnabled(settings.isEnabled)
 
         // The system truth wins over the persisted value: the user can revoke
@@ -62,41 +39,33 @@ final class AppModel {
     // MARK: - Menu actions
 
     func setEnabled(_ enabled: Bool) {
+        guard settings.isEnabled != enabled else { return }
         settings.isEnabled = enabled
-        // Status OFF must release the destination, not merely stop absorbing:
-        // holding it while doing nothing would still displace a real player.
+        // Off must release the destination, not merely stop absorbing: holding
+        // it while doing nothing would still displace a real player.
         sink?.setEnabled(enabled)
         persist()
     }
 
+    /// The guard is load-bearing, not an optimisation.
+    ///
+    /// `MenuBarExtra(isInserted:)` writes back to its binding on every scene
+    /// update. Without this check that write reaches `UserDefaults`, which
+    /// notifies the `@AppStorage` the scene reads, which re-evaluates the
+    /// scene, which writes again — measured as a sustained 100% CPU spin on the
+    /// main thread. An unchanged value must not touch storage.
     func setShowsMenuBarItem(_ shown: Bool) {
+        guard settings.showsMenuBarItem != shown else { return }
         settings.showsMenuBarItem = shown
         persist()
     }
 
     func setLaunchesAtLogin(_ enabled: Bool) {
-        settings.launchesAtLogin = LaunchAtLogin.setEnabled(enabled)
+        let result = LaunchAtLogin.setEnabled(enabled)
+        guard settings.launchesAtLogin != result else { return }
+        settings.launchesAtLogin = result
         persist()
     }
-
-    func setDiagnosticsLoggingEnabled(_ enabled: Bool) {
-        settings.diagnosticsLoggingEnabled = enabled
-        diagnostics.setEnabled(enabled)
-        persist()
-    }
-
-    // MARK: - Diagnostics
-
-    func refreshDiagnostics() {
-        recentEvents = diagnostics.recent(limit: 50)
-    }
-
-    func clearDiagnostics() {
-        diagnostics.clear()
-        recentEvents = []
-    }
-
-    // MARK: - Internals
 
     private func persist() {
         settingsStore.save(settings)

@@ -1,0 +1,8 @@
+/* Menu bar */
+"menu.block" = "Block Play/Pause";
+"menu.showInMenuBar" = "Show in Menu Bar";
+"menu.launchAtLogin" = "Launch at Login";
+"menu.quit" = "Quit";
+
+/* Help text */
+"help.showInMenuBar" = "Hiding it keeps the app running. Open the app again to bring it back.";

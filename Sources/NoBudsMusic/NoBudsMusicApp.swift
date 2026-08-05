@@ -11,14 +11,8 @@ struct NoBudsMusicApp: App {
     // Read through `@AppStorage` rather than from `AppModel`.
     //
     // Measured: reading `@Observable` state from a `Scene` body wedges the main
-    // thread. SwiftUI's scene update rebuilds the main menu, which invalidates
-    // the same graph that read the state, and the run loop never completes a
-    // turn — no timers, no dispatched blocks, no Apple Events, no further
-    // delegate callbacks. The app looks alive because the menu bar item is
-    // already installed.
-    //
-    // `AppModel` remains the only writer; these are views onto the same
-    // UserDefaults keys and update when it persists.
+    // thread in a SwiftUI update loop. `AppModel` remains the only writer; these
+    // are views onto the same UserDefaults keys.
     @AppStorage(SettingsKey.isEnabled)
     private var isEnabled = AppSettings.default.isEnabled
     @AppStorage(SettingsKey.showsMenuBarItem)
@@ -27,15 +21,15 @@ struct NoBudsMusicApp: App {
     var body: some Scene {
         MenuBarExtra(
             "noBudsMusic",
-            // `music.note.square` does not exist; `music.note.tv` is the
-            // closest real symbol — a rounded rectangle containing a note.
-            // Filled while the sink is holding the destination.
+            // `music.note.square` does not exist; `music.note.tv` is the closest
+            // real symbol — a rounded rectangle containing a note. Filled while
+            // blocking.
             systemImage: isEnabled ? "music.note.tv.fill" : "music.note.tv",
             isInserted: $showsMenuBarItem
         ) {
             // A ViewBuilder closure: evaluated when the menu opens, not during
             // the scene update. Observable reads are safe here.
-            MenuContent(model: appDelegate.model, windows: appDelegate.settingsWindow)
+            MenuContent(model: appDelegate.model)
         }
     }
 }
@@ -43,26 +37,16 @@ struct NoBudsMusicApp: App {
 /// Owns the app model and keeps the process resident with no Dock icon and no
 /// windows.
 ///
-/// The model lives here rather than in `@State` so it can be started from
-/// `applicationDidFinishLaunching`, which runs whether or not the menu has ever
-/// been opened — and still runs when the menu bar item is hidden.
-///
-/// Not an `ObservableObject`, and `settingsWindow` is not `lazy`: both would put
-/// mutation of an observed object on the scene-update path.
+/// **The app deliberately has no windows at all.** A window hosting SwiftUI in a
+/// `MenuBarExtra`-only app pins the main thread at 100% CPU, looping through
+/// `scenesDidChange -> makeMainMenu -> invalidate -> update`. The diagnostics
+/// screen that used to live in one is gone; `just logs` replaces it.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let model: AppModel
-    let settingsWindow: SettingsWindowController
+    let model = AppModel()
 
     private let logger = Logger(subsystem: AppIdentity.logSubsystem, category: "app")
-    private var showSettingsObserver: NSObjectProtocol?
-
-    override init() {
-        let model = AppModel()
-        self.model = model
-        self.settingsWindow = SettingsWindowController(model: model)
-        super.init()
-    }
+    private var showObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // A second copy would fight this one for the Now Playing destination.
@@ -75,15 +59,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.start()
 
         // Route 1: another launch that yielded to this instance.
-        showSettingsObserver = SingleInstance.observeShowSettings { [weak self] in
-            Task { @MainActor in self?.showSettings() }
+        showObserver = SingleInstance.observeShow { [weak self] in
+            Task { @MainActor in self?.showMenuBarItem() }
         }
 
         // Route 3, registered on the next run loop turn so it lands after
         // SwiftUI has installed its own. Measured: `application(_:open:)` is
         // never delivered to an adaptor delegate under the SwiftUI App
         // lifecycle — SwiftUI consumes the event and routes it to `onOpenURL`
-        // on a live View, and this app has none while the menu is closed.
+        // on a live View, and this app has none.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             NSAppleEventManager.shared().setEventHandler(
@@ -92,7 +76,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 forEventClass: AEEventClass(kInternetEventClass),
                 andEventID: AEEventID(kAEGetURL)
             )
-            self.logger.info("url handler registered")
         }
 
         logger.info("launched")
@@ -104,13 +87,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     ) {
         let raw = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue
         guard let raw, URL(string: raw)?.scheme == AppIdentity.urlScheme else { return }
-        showSettings()
+        showMenuBarItem()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        if let showSettingsObserver {
-            DistributedNotificationCenter.default().removeObserver(showSettingsObserver)
+        if let showObserver {
+            DistributedNotificationCenter.default().removeObserver(showObserver)
         }
+        model.stop()
     }
 
     /// Route 2: Finder or Spotlight re-launching the running instance.
@@ -118,41 +102,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Unlike `application(_:open:)`, this one *is* delivered under the SwiftUI
     /// App lifecycle — verified by launching the app twice and reading the log.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
-        showSettings()
+        showMenuBarItem()
         return false
     }
 
-    private func showSettings() {
-        logger.info("showing settings window")
-        settingsWindow.show(tab: .diagnostics)
+    /// The only way back once the menu bar item is hidden. With no windows,
+    /// re-showing the item *is* the recovery path.
+    private func showMenuBarItem() {
+        logger.info("showing the menu bar item")
+        model.setShowsMenuBarItem(true)
     }
 }
 
 private struct MenuContent: View {
     // Not `@Bindable`: every mutation goes through an explicit `AppModel` method
-    // so persistence and the event path stay in sync.
+    // so persistence and the sink stay in sync.
     let model: AppModel
-    let windows: SettingsWindowController
 
     var body: some View {
         Toggle(
-            "Status",
+            "menu.block",
             isOn: Binding(get: { model.settings.isEnabled }, set: { model.setEnabled($0) })
         )
 
         Divider()
 
         Toggle(
-            "Show in Menu Bar",
+            "menu.showInMenuBar",
             isOn: Binding(
                 get: { model.settings.showsMenuBarItem },
                 set: { model.setShowsMenuBarItem($0) }
             )
         )
-        .help("非表示にしても常駐は続きます。アプリを再度開くと戻ります。")
+        .help("help.showInMenuBar")
 
         Toggle(
-            "Launch at Login",
+            "menu.launchAtLogin",
             isOn: Binding(
                 get: { model.settings.launchesAtLogin },
                 set: { model.setLaunchesAtLogin($0) }
@@ -160,11 +145,9 @@ private struct MenuContent: View {
         )
         .disabled(!LaunchAtLogin.isSupported)
 
-        Button("Diagnostics...") { windows.show(tab: .diagnostics) }
-
         Divider()
 
-        Button("Quit") { NSApp.terminate(nil) }
+        Button("menu.quit") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
 }

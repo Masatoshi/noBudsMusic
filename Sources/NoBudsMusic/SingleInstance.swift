@@ -4,7 +4,7 @@ import NoBudsMusicCore
 import os
 
 /// Prevents a second copy of the app from running, and gives an already-running
-/// instance a way to be told "show your settings".
+/// instance a way to be told "make yourself visible again".
 ///
 /// Finder and Spotlight normally activate an existing instance rather than
 /// launching a second one, which arrives as `applicationShouldHandleReopen`.
@@ -12,9 +12,8 @@ import os
 /// different path, or `open -n`. Without it both instances would claim the Now
 /// Playing destination and fight over it.
 enum SingleInstance {
-    /// Posted to the running instance to ask it to surface its UI.
-    static let showSettingsNotification = Notification.Name(
-        AppIdentity.showSettingsNotificationName)
+    /// Posted to the running instance to ask it to show its menu bar item.
+    static let showNotification = Notification.Name(AppIdentity.showSettingsNotificationName)
 
     private static let logger = Logger(
         subsystem: AppIdentity.logSubsystem,
@@ -36,21 +35,20 @@ enum SingleInstance {
         logger.notice(
             """
             another instance is running (pid \(other.processIdentifier, privacy: .public)); \
-            asking it to show settings and exiting
+            asking it to show itself and exiting
             """
         )
-        requestShowSettings()
-        other.activate()
+        requestShow()
         return true
     }
 
-    /// Asks the running instance to open its settings UI.
+    /// Asks the running instance to show its menu bar item.
     ///
     /// Distributed notifications cross process boundaries; the app is not
     /// sandboxed, so no app-group suffix is needed.
-    static func requestShowSettings() {
+    static func requestShow() {
         DistributedNotificationCenter.default().postNotificationName(
-            showSettingsNotification,
+            showNotification,
             object: nil,
             userInfo: nil,
             deliverImmediately: true
@@ -58,9 +56,9 @@ enum SingleInstance {
     }
 
     /// Observes the request in the instance that stays alive.
-    static func observeShowSettings(_ handler: @escaping @Sendable () -> Void) -> NSObjectProtocol {
+    static func observeShow(_ handler: @escaping @Sendable () -> Void) -> NSObjectProtocol {
         DistributedNotificationCenter.default().addObserver(
-            forName: showSettingsNotification,
+            forName: showNotification,
             object: nil,
             queue: .main
         ) { _ in handler() }

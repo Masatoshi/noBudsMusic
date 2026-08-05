@@ -18,7 +18,6 @@ struct AppSettingsTests {
         #expect(store.load() == AppSettings.default)
         #expect(AppSettings.default.isEnabled)
         #expect(AppSettings.default.showsMenuBarItem)
-        #expect(AppSettings.default.diagnosticsLoggingEnabled)
     }
 
     @Test("Settings survive a store round trip")
@@ -27,8 +26,7 @@ struct AppSettingsTests {
         let saved = AppSettings(
             isEnabled: false,
             showsMenuBarItem: false,
-            launchesAtLogin: true,
-            diagnosticsLoggingEnabled: false
+            launchesAtLogin: true
         )
         UserDefaultsSettingsStore(defaults: defaults).save(saved)
 
@@ -44,44 +42,5 @@ struct AppSettingsTests {
         let loaded = UserDefaultsSettingsStore(defaults: defaults).load()
         #expect(loaded.isEnabled == false)
         #expect(loaded.showsMenuBarItem == true)
-        #expect(loaded.diagnosticsLoggingEnabled == true)
-    }
-}
-
-@Suite("DiagnosticsLog")
-struct DiagnosticsLogTests {
-    private func entry() -> DiagnosticsEntry {
-        DiagnosticsEntry(
-            key: .play,
-            outcome: FilterOutcome(decision: .pass, reason: .statusOff)
-        )
-    }
-
-    @Test("The log is bounded")
-    func boundedLog() {
-        let log = DiagnosticsLog(capacity: 3)
-        for _ in 0..<10 { log.append(entry()) }
-        #expect(log.recent(limit: 100).count == 3)
-    }
-
-    @Test("Disabling logging stops recording")
-    func disabledStopsRecording() {
-        let log = DiagnosticsLog(isEnabled: false)
-        log.append(entry())
-        #expect(log.recent().isEmpty)
-
-        log.setEnabled(true)
-        log.append(entry())
-        #expect(log.recent().count == 1)
-    }
-
-    @Test("Recent returns newest first")
-    func newestFirst() {
-        let log = DiagnosticsLog()
-        let first = entry()
-        let second = entry()
-        log.append(first)
-        log.append(second)
-        #expect(log.recent().map(\.id) == [second.id, first.id])
     }
 }

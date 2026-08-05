@@ -11,28 +11,19 @@ import os
 /// destination — and that when nothing holds it, macOS launches something.
 /// Holding it and doing nothing removes the reason to launch.
 ///
-/// **This is a measurement instrument first.** It logs every command it
-/// receives, because the open questions in ADR 0003 — does the keyboard route
-/// here too, does a real player take the destination back — are answered by
-/// what shows up in this log, not by reading the API documentation.
+/// Every command is logged. There is no diagnostics UI; `just logs` is the
+/// interface, and absorbed commands are logged at `.notice` so they survive
+/// into `log show` and `just logs-dump`.
 ///
 /// It knows nothing about which device produced a command. Nothing on this path
 /// does; see `EventFilter`.
 @MainActor
 final class NowPlayingSink {
     private let filter = EventFilter()
-    private let diagnostics: DiagnosticsLog
     private let logger = Logger(subsystem: AppIdentity.logSubsystem, category: "nowPlaying")
 
     private var isActive = false
     private var handlers: [(MPRemoteCommand, Any)] = []
-
-    /// Called after every absorbed or observed command so the UI can refresh.
-    var onEvent: (@MainActor (DiagnosticsEntry) -> Void)?
-
-    init(diagnostics: DiagnosticsLog) {
-        self.diagnostics = diagnostics
-    }
 
     var isHoldingDestination: Bool { isActive }
 
@@ -44,10 +35,9 @@ final class NowPlayingSink {
 
         let center = MPRemoteCommandCenter.shared()
 
-        // Only Play/Pause is in scope. The others are registered anyway, and
-        // deliberately refused rather than absorbed, so the log shows whether
-        // they route here — which is how ADR 0003's "does this swallow
-        // everything" question gets answered.
+        // Only Play/Pause is in scope. Next and Previous are registered anyway
+        // and deliberately forwarded, so the headset's other gestures keep
+        // working and the log shows that they arrive here at all.
         register(center.playCommand, key: .play, absorb: true)
         register(center.pauseCommand, key: .play, absorb: true)
         register(center.togglePlayPauseCommand, key: .play, absorb: true)
@@ -55,12 +45,10 @@ final class NowPlayingSink {
         register(center.previousTrackCommand, key: .previous, absorb: false)
 
         // Claiming the destination needs a Now Playing item; an app with no
-        // metadata is not a player as far as MediaRemote is concerned. Whether
-        // this is enough without actually producing audio is measurement
-        // question 1 in ADR 0003.
+        // metadata is not a player as far as MediaRemote is concerned. Measured
+        // sufficient without producing any audio (M12).
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
             MPMediaItemPropertyTitle: "noBudsMusic",
-            MPMediaItemPropertyArtist: "Play/Pause is being discarded",
             MPNowPlayingInfoPropertyPlaybackRate: 0.0,
             MPMediaItemPropertyPlaybackDuration: 0.0,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
@@ -108,12 +96,25 @@ final class NowPlayingSink {
 
     private func handle(key: MediaKey, absorb: Bool) -> MPRemoteCommandHandlerStatus {
         // `isEnabled: absorb` rather than a settings read: the sink is only
-        // registered while Status is ON, and `absorb` encodes whether this
-        // particular command is in scope at all.
+        // registered while enabled, and `absorb` encodes whether this particular
+        // command is in scope at all.
         let outcome = filter.decide(key: key, isEnabled: absorb)
-        let entry = DiagnosticsEntry(key: key, outcome: outcome)
-        diagnostics.append(entry)
-        onEvent?(entry)
+
+        if outcome.isBlocked {
+            logger.notice(
+                """
+                \(key.rawValue, privacy: .public) discarded \
+                (\(outcome.reason.rawValue, privacy: .public))
+                """
+            )
+        } else {
+            logger.debug(
+                """
+                \(key.rawValue, privacy: .public) forwarded \
+                (\(outcome.reason.rawValue, privacy: .public))
+                """
+            )
+        }
 
         // `.success` means handled — the command stops here and nothing is
         // launched. `.noSuchContent` lets the system look elsewhere, which for

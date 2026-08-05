@@ -1,0 +1,8 @@
+/* Menu bar */
+"menu.block" = "Play/Pause を遮断";
+"menu.showInMenuBar" = "メニューバーに表示";
+"menu.launchAtLogin" = "ログイン時に起動";
+"menu.quit" = "終了";
+
+/* Help text */
+"help.showInMenuBar" = "非表示にしても常駐は続きます。アプリを再度開くと戻ります。";
