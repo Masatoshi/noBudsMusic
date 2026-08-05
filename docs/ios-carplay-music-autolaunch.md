@@ -229,6 +229,28 @@ Whether Apple Music is installed, subscribed, or signed in was not varied.
 Neither was the iOS version — everything here is iOS 27.0. Earlier versions may
 route differently, and this document should not be read as covering them.
 
+### One head unit, and not a plain one
+
+The CarPlay measurement is a single car: a Toyota, where CarPlay is started from
+the head unit's own interface rather than being the primary screen. It connected
+wirelessly, over the AirPlay transport:
+
+```text
+airplayd: [APTransportConnectionHTTP.CarPlay-evnt] Event message received
+          from 192.168.50.1:5001
+airplayd: HTTP Request: POST /command RTSP/1.0
+```
+
+The head unit sends `POST /command` events across that link, and their bodies
+are `<private>`. So whether the car *asked* for playback, or whether
+`com.apple.CarPlayApp` launches Music on connection regardless, is not visible
+in the log. Both are consistent with what was captured.
+
+That distinction matters for any fix. If the head unit is requesting a media
+source, the behaviour may differ by manufacturer, by wired versus wireless, and
+by head-unit setting — and an iOS-side fix may not be the right layer at all.
+Nothing here establishes that the result generalises to another car.
+
 ## References
 
 - [CarPlay entitlements](https://developer.apple.com/documentation/carplay/requesting-carplay-entitlements)
