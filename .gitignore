@@ -2,6 +2,9 @@
 *.xcodeproj/
 *.xcworkspace/
 
+# Icon build intermediate; Resources/AppIcon.icns is committed
+build/AppIcon.iconset/
+
 # Xcode
 DerivedData/
 build/

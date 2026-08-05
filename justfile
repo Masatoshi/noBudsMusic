@@ -40,6 +40,14 @@ signing:
     @echo "team:     {{sign_team}}"
     @codesign -dv {{app}} 2>&1 | grep -E "Identifier|Authority|TeamIdentifier|Signature" || true
 
+# Regenerate Resources/AppIcon.icns from the SF Symbol the app draws at runtime.
+# Committed output; run this after changing the glyph or colour.
+icon:
+    mkdir -p {{derived}}
+    xcrun swift Scripts/make-icon.swift
+    iconutil -c icns {{derived}}/AppIcon.iconset -o Resources/AppIcon.icns
+    @echo "wrote Resources/AppIcon.icns"
+
 # --- Build / verify --------------------------------------------------------
 
 # Build the app.

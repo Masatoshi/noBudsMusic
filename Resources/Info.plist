@@ -12,6 +12,10 @@
 	     it later resets the Accessibility grant and the login item. -->
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<!-- Shown in the Finder and in System Settings > Login Items. Generated
+	     from the same SF Symbol the app draws at runtime; see `just icon`. -->
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

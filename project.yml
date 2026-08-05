@@ -44,6 +44,8 @@ targets:
     platform: macOS
     sources:
       - Sources/NoBudsMusic
+      - path: Resources/AppIcon.icns
+        buildPhase: resources
       - path: Resources/en.lproj
         buildPhase: resources
       - path: Resources/ja.lproj
