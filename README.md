@@ -95,11 +95,19 @@ Tested on two machines with Redmi Buds 6 Lite and Pixel Buds A-Series:
 - The app stays resident with the menu bar item hidden, survives restart, and
   does not launch twice
 
-## Why not noTunes
+## Relationship to noTunes
 
-[noTunes](https://github.com/tombonez/noTunes) quits Music.app after it opens.
-This app removes the reason it opens, so nothing has to be watched for and
-nothing has to be killed.
+[noTunes](https://github.com/tombonez/noTunes) solves a broader problem: it stops
+Music.app from opening whatever caused it — clicking the icon, following a link,
+a headset tap, anything.
+
+This app addresses one specific cause. It removes the condition that makes
+`mediaremoted` launch a player, and does nothing about any other route into
+Music.app.
+
+So they are not really substitutes. If you want Music.app never to open, noTunes
+covers far more ground. If the only time it opens is when you tap your earbuds,
+this is a narrower fix that needs no permissions and nothing running at rest.
 
 ## Documentation
 
