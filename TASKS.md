@@ -59,10 +59,16 @@ ADR 0001 is Rejected; every task here assumed a HID or event-tap path.
 - todo: Permission guidance end to end
 - todo: Validate the 14 success criteria on real hardware
 
-## After Phase 4 - Distribution
+## Distribution (ADR 0002)
 
-Deferred by ADR 0002 until the app works.
+The app works, so this is now actionable.
 
-- todo: Re-run the manual matrix with the App Sandbox enabled
+- todo: Enable `com.apple.security.app-sandbox`, rebuild, run the matrix
+- todo: Confirm `MPNowPlayingInfoCenter` still wins the destination sandboxed —
+  the one that could fail
+- todo: Fix the `DistributedNotificationCenter` name for sandbox (needs an
+  app-group prefix)
+- todo: Confirm `SMAppService` login item still registers
 - todo: Decide ADR 0002 (App Store vs OSS on GitHub)
 - todo: Signing for the chosen channel
+- todo: If GitHub, translate `README.md` to English

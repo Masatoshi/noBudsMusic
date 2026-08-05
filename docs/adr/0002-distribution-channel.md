@@ -64,21 +64,38 @@ Recorded now so the evaluation does not start from scratch.
 Not blockers, confirmed: `SMAppService` (launch at login) works sandboxed, and
 `LSUIElement` menu bar apps are acceptable on the store.
 
-**Update 2026-08-05:** ADR 0001 was rejected and the HID / event-tap code
-deleted, so the app no longer uses any TCC-gated API. Questions 1-3 below are
-moot — there are no grants to lose under the sandbox. `MPRemoteCommandCenter`
-and `SMAppService` are both sandbox-compatible. Only question 4, App Review's
-view of the app's purpose, remains.
+**Update 2026-08-05, after the implementation worked.** The premise of this ADR
+has changed substantially, and mostly in the store's favour.
 
-Unverified, to be measured after the implementation works:
+The app no longer intercepts anything. It occupies the Now Playing destination
+and forwards every command (ADR 0003, `TECH_RESEARCH.md` M24). Consequences for
+this decision:
 
-1. Can a sandboxed build be granted Accessibility?
-2. Can a sandboxed build be granted Input Monitoring?
-3. Can it then create a *consuming* (`.defaultTap`) event tap, not just a
-   listen-only one?
-4. Would App Review accept an app whose function is intercepting system-wide
-   media input? This one cannot be measured locally at all — it is a submission
-   outcome.
+- **No TCC-gated API at all.** No Accessibility, no Input Monitoring, no event
+  tap. Questions 1-3 below are moot: there are no grants to lose under the
+  sandbox.
+- **The remaining API surface is `MPRemoteCommandCenter`,
+  `MPNowPlayingInfoCenter`, `SMAppService` and `NSStatusItem`** — all ordinary
+  app API, all expected to work sandboxed.
+- **Question 4 changes character.** "An app that intercepts system-wide media
+  input" was a hard sell. "An app that registers as a Now Playing target so
+  macOS stops launching Music" is a much more ordinary thing to describe.
+
+Still to measure before deciding, and none of it is speculative work — it is one
+build and one pass of the manual matrix:
+
+1. Does `MPNowPlayingInfoCenter` still win the destination under the sandbox?
+   This is the one that could fail: it is the mechanism, and a sandboxed app may
+   be treated differently.
+2. Does `SMAppService.mainApp` still register the login item under the sandbox?
+   Expected yes.
+3. Does `DistributedNotificationCenter` still work for the single-instance
+   handshake? A sandboxed app needs an app-group-prefixed name, so this one
+   probably needs a change.
+4. Would App Review accept it? Not measurable locally.
+
+Item 3 is the only known code change. Enable the sandbox, rebuild, run the
+matrix, record both results in `TECH_RESEARCH.md`, then decide.
 
 The measurement for 1-3 is mechanical: enable `com.apple.security.app-sandbox`,
 rebuild, re-run the same manual matrix that the unsandboxed build passed, and
