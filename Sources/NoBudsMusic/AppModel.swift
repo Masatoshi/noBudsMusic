@@ -13,6 +13,7 @@ import NoBudsMusicCore
 final class AppModel {
     private let settingsStore: SettingsStoring
     private let sink: NowPlayingSink?
+    private let audio: AudioActivityMonitor?
 
     private(set) var settings: AppSettings
 
@@ -23,6 +24,7 @@ final class AppModel {
         self.settingsStore = settingsStore
         self.settings = settingsStore.load()
         self.sink = installsSink ? NowPlayingSink() : nil
+        self.audio = installsSink ? AudioActivityMonitor() : nil
     }
 
     var isHoldingDestination: Bool { sink?.isHoldingDestination ?? false }
@@ -30,7 +32,11 @@ final class AppModel {
     // MARK: - Lifecycle
 
     func start() {
-        sink?.setEnabled(settings.isEnabled)
+        audio?.onChange = { [weak self] _ in
+            Task { @MainActor in self?.syncSink() }
+        }
+        audio?.start()
+        syncSink()
 
         // The system truth wins over the persisted value: the user can revoke
         // the login item outside the app.
@@ -41,7 +47,21 @@ final class AppModel {
     }
 
     func stop() {
+        audio?.stop()
         sink?.deactivate()
+    }
+
+    /// The sink holds the Now Playing destination only while the app is enabled
+    /// *and* nothing else is playing audio.
+    ///
+    /// That second condition is the whole design. Declaring `.playing`
+    /// unconditionally steals the destination from real players (M19);
+    /// declaring `.paused` never wins it at all (M21). Holding `.playing` only
+    /// during silence gets both halves right, because the bug can only happen
+    /// during silence in the first place.
+    private func syncSink() {
+        let isPlaying = audio?.isAudioPlaying ?? false
+        sink?.setEnabled(settings.isEnabled && !isPlaying)
     }
 
     // MARK: - Menu actions
@@ -51,7 +71,7 @@ final class AppModel {
         settings.isEnabled = enabled
         // Off must release the destination, not merely stop absorbing: holding
         // it while doing nothing would still displace a real player.
-        sink?.setEnabled(enabled)
+        syncSink()
         commit()
     }
 

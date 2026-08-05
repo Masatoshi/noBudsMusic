@@ -54,18 +54,17 @@ final class NowPlayingSink {
             MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
         ]
 
-        // `.paused`, not `.playing`.
+        // `.playing`, and that is deliberate despite M19.
         //
-        // Declaring `.playing` made this app outrank real players: it took the
-        // destination from Chrome mid-YouTube and swallowed its Play/Pause
-        // (M19). macOS ranks a playing app above a paused one, so `.paused`
-        // should let anything actually playing win while still leaving this app
-        // as the destination when nothing else wants it — which is the only
-        // moment the bug can occur.
+        // `.playing` outranks real players and steals their Play/Pause; but
+        // `.paused` is never chosen as the destination at all, so it does not
+        // prevent the launch either (M21). Neither is safe on its own.
         //
-        // Unverified whether a paused app still receives commands at all. If it
-        // does not, this approach has no safe form.
-        MPNowPlayingInfoCenter.default().playbackState = .paused
+        // What makes `.playing` safe here is *when* it is declared: the sink is
+        // only activated while nothing is playing audio, and is deactivated the
+        // moment something starts. `AudioActivityMonitor` drives that, so there
+        // is never a real player to steal from.
+        MPNowPlayingInfoCenter.default().playbackState = .playing
 
         isActive = true
         logger.notice("claimed the Now Playing destination")

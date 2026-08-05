@@ -69,8 +69,18 @@ this app stole the destination mid-YouTube and swallowed its Play/Pause. M17
 generalised from one player.
 
 `playbackState = .paused` (M20) makes the app yield to anything actually
-playing. Whether it still catches the empty case is unverified, and that is now
-the question the ADR turns on. Risk 2 remains unverified and is now the single thing standing
+playing, but M21 showed it is then never chosen as the destination at all — so
+it does not prevent the launch either. Neither fixed state works.
+
+**The resolution is to make the state conditional.** The app declares
+`.playing`, but only holds the destination while nothing else is playing audio,
+and releases it the moment something starts. `AudioActivityMonitor` supplies
+that signal from CoreAudio's per-process audio objects
+(`kAudioProcessPropertyIsRunningOutput`), event-driven, no polling.
+
+This works because the bug can only occur during silence: `mediaremoted`
+launches Music precisely when no player holds the destination. Holding it only
+during silence covers exactly the failing case and nothing else. Risk 2 remains unverified and is now the single thing standing
 between this design and acceptance.
 
 The remaining shape of the problem: **the app must hold the destination only
