@@ -70,7 +70,10 @@ risks, in descending order of how likely they are to sink the approach.
    — it breaks media control generally.
 2. **Swallowing the keyboard.** Keyboard media keys route through the same
    mechanism. As the destination, the app receives and discards those too, which
-   is the blanket disabling criteria 5, 6 and 7 forbid.
+   is the blanket disabling criteria 5, 6 and 7 forbid. Cleared by
+   `.noSuchContent`: the command is forwarded rather than consumed. Verified on
+   hardware — keyboard Play/Pause and volume keys both behave normally on
+   MacBookPro18,4, macOS 26.5.2 (25F84).
 3. ~~**Not becoming the destination at all.**~~ Cleared by M12: public API alone
    is enough, without producing audio.
 4. **Being displaced, and not coming back.** Cleared as a correctness concern by
@@ -96,8 +99,7 @@ that signal from CoreAudio's per-process audio objects
 
 This works because the bug can only occur during silence: `mediaremoted`
 launches Music precisely when no player holds the destination. Holding it only
-during silence covers exactly the failing case and nothing else. Risk 2 remains unverified and is now the single thing standing
-between this design and acceptance.
+during silence covers exactly the failing case and nothing else.
 
 The remaining shape of the problem: **the app must hold the destination only
 when nothing else wants it**, and must notice when that becomes true again
