@@ -1,228 +1,151 @@
 # noBudsMusic
 
-macOSでBluetoothイヤホン／ヘッドセットのタップ操作が `Play`
-コマンドとして処理され、再生対象がない場合にApple
-Musicが自動起動する挙動を防ぐ常駐アプリ。
+Stops Music.app from launching itself when you tap a Bluetooth headset.
 
-## 背景
+[日本語](README.ja.md)
 
-macOS
-26系では、Bluetoothイヤホンのタップ操作により次の経路でMusic.appが起動することがある。
+## The problem
 
-``` text
-Bluetooth headset
-  → bluetoothd
-  → mediaremoted
-  → LaunchServices
-  → Music.app
+On macOS 26, tapping a Bluetooth headset can open Music.app even when nothing
+was playing and you never asked for it:
+
+```text
+mediaremoted: Destination app com.apple.Music not available for command
+              <command = Play, SenderBundleIdentifier = com.apple.bluetoothd>,
+              and command requested a launch.
 ```
 
-確認済みログ例:
+Disabling `com.apple.rcd` does not help.
 
-``` text
-SenderBundleIdentifier = <com.apple.bluetoothd>
-command = Play
-Destination app com.apple.Music not available for command
-command requested a launch
+## How it works
+
+**This app blocks nothing.**
+
+`bluetoothd` sends the tap to `mediaremoted` as a MediaRemote command, which
+routes it to whatever holds the Now Playing destination — and launches a player
+when nothing does. That empty slot is the bug.
+
+So the app occupies the slot and gets out of the way. Every command it receives
+is answered with `.noSuchContent`:
+
+```text
+something is playing   → mediaremoted passes the command to it, as normal
+nothing is playing     → the command goes nowhere, and no launch is requested
 ```
 
-`com.apple.rcd` を無効化しても発生する。
+Answering `.success` would also prevent the launch, but it consumes the command,
+and then a paused YouTube tab can no longer be resumed from the headset. That one
+return value is the whole design; it took eight measured dead ends to find.
 
-noTunesのような「起動後にMusicを終了する」方式ではなく、Play/Pause入力をMusic起動前に遮断する。
+Consequences:
 
-## 対象環境
+- **No permissions.** No Accessibility, no Input Monitoring, no event tap.
+- **No polling.** No timer and no observer loop; the app is woken only when a
+  command arrives.
+- **Runs sandboxed**, with nothing degraded.
+- **Media and volume keys are unaffected**, because everything is forwarded.
+- **No per-device settings**, and there cannot be: a MediaRemote command carries
+  no device identity. Every headset arrives as `com.apple.bluetoothd`.
 
-- macOS 26.x
-- Apple Silicon
-- Swift / SwiftUI / Xcodeプロジェクト
+## Install
 
-動作確認対象:
+Requires macOS 14+, though it is only tested on macOS 26 / Apple Silicon.
 
-- Redmi Buds 6 Lite
-- Pixel Buds A-Series
-
-## アプリ形態
-
-Swift製のバックグラウンド常駐アプリ。メニューバー項目の表示は任意設定で、非表示にしてもバックグラウンド常駐を継続する。
-
-## 動作仕様
-
-**このアプリは何も遮断しない。** Now Playing の宛先を占有するだけ。
-
-`mediaremoted` は Play コマンドを Now Playing 宛先へ送り、**宛先が空のときに
-プレイヤーを起動する**。これが Music.app 自動起動の直接原因なので、席を埋めて
-おけば起動する理由が消える。
-
-受け取ったコマンドは `.noSuchContent` で返す。これにより:
-
-``` text
-再生中のアプリがある  → mediaremoted がそちらへ転送する（操作は普通に効く）
-どこにも送り先がない  → 何も起きない。起動も要求されない
+```bash
+just run
 ```
 
-`.success`（消費する）でも起動は防げるが、コマンドがどこにも届かなくなり、
-再生中のアプリを操作できなくなる。この戻り値ひとつが設計の要。
+Build prerequisites: Xcode 26, [just](https://github.com/casey/just),
+[XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
-**デバイスごとの設定は持たない。** MediaRemoteコマンドには送信元デバイスの
-識別情報が無く、すべて `com.apple.bluetoothd` として届くため、機器を区別する
-ことが原理的にできない。
+To put it on another Mac you own:
 
-**権限を一切必要としない。** アクセシビリティも入力監視も不要。
+```bash
+just release
+just deploy <hostname>
+```
 
-**App Sandbox 内で動作する。** サンドボックス下でも機構は一切劣化しない（M26）。
+`rsync` does not set the quarantine attribute, so Gatekeeper does not block the
+copy. The build is signed with a *development* certificate, so the same bundle
+downloaded or AirDropped **would** be blocked — real distribution needs Developer
+ID and notarization. See [ADR 0002](docs/adr/0002-distribution-channel.md).
 
-**常駐コストはほぼゼロ。** タイマーも監視ループも無く、コマンドが来たときだけ
-起きる。
+## Using it
 
-## メニューバー
+A menu bar item and nothing else. No windows.
 
-``` text
-noBudsMusic
-
-Status                  ON/OFF
-Show in Menu Bar        ON/OFF
-Launch at Login         ON/OFF
-Diagnostics...
+```text
+Prevent Music.app from launching   [x]
+Show in Menu Bar                   [x]
+Launch at Login                    [ ]
 Quit
 ```
 
-メニューバーを非表示にしても常駐は続く。復帰する手段は次の3つ。
+Hiding the menu bar item keeps the app running. To bring it back, open the app
+again from the Finder or Spotlight, or run `just show`.
 
-- FinderまたはSpotlightからアプリを再度起動する（二重起動はしない）
-- `open nobudsmusic://settings`
-- `just settings`
+While the app holds the slot and nothing else is playing, Control Center lists it
+as *Preventing Music.app from launching*. That is unavoidable — occupying the Now
+Playing slot means appearing in Now Playing — and it is accurate, because at that
+moment the app really is the destination. When something is playing, that app is
+shown instead.
 
-## 成功条件
+## Verified behaviour
 
-1. Status ONでイヤホンをタップしてもMusic.appが起動しない
-2. Status OFFでは通常どおり動作する
-3. キーボードのPlay / Pauseは影響を受けない
-4. USBデバイスのPlay / Pauseは影響を受けない
-5. 音量キーは影響を受けない
-6. イヤホンの音声出力とマイクは影響を受けない
-7. AirPlayは影響を受けない
-8. 再生中のアプリの操作を妨げない
-9. Control CenterのNow Playingを不要に壊さない
-   - 再生中はそのアプリが表示される。何も再生していないときは本アプリが
-     「Music.app の自動起動を防止中」と表示される。Now Playing の席を占有する
-     機構である以上これは避けられず、実際その時点の宛先は本アプリなので表示は
-     正確。タイトルを外してもアプリ名にフォールバックするだけだった
-10. メニューバー非表示でも常駐する
-11. アプリ再起動後も設定が保持される
-12. macOS再起動後もログイン時起動する
-13. 同じアプリが二重起動しない
+Tested on two machines with Redmi Buds 6 Lite and Pixel Buds A-Series:
 
-## 現在の実装状況
+- Tapping the earbuds does not launch Music.app
+- YouTube and Amazon Music stay controllable from the earbuds once they have
+  played
+- A real player takes the destination back while it plays
+- Keyboard media keys (F8) and volume keys (F11/F12) are unaffected
+- Volume, microphone and AirPlay are unaffected
+- The app stays resident with the menu bar item hidden, survives restart, and
+  does not launch twice
 
-**動作する。** 実機（Pixel Buds A-Series）で確認済み。
+## Why not noTunes
 
-- イヤホンをタップしてもMusic.appが起動しない
-- YouTube / Amazon Music は、一度再生していればイヤホンから操作できる
-- 再生中のアプリが宛先を取り返し、その間このアプリは関与しない
+[noTunes](https://github.com/tombonez/noTunes) quits Music.app after it opens.
+This app removes the reason it opens, so nothing has to be watched for and
+nothing has to be killed.
 
-そこに至るまでに4つの案を計測で潰している。詳細は `TECH_RESEARCH.md`（M1〜M24）、
-判断は `docs/adr/`。当初の候補（IOHIDManager / CGEventTap / IOHID seize /
-DriverKit）は**すべて成立しない** — イヤホンのタップはHID経路に一切現れず、
-`bluetoothd` が直接MediaRemoteコマンドを発行しているため。
+## Documentation
 
-未検証: キーボードの専用メディアキー（転送されるはずだが未確認）。
+| File | What it is |
+| --- | --- |
+| [`docs/macos-notes.md`](docs/macos-notes.md) | macOS behaviour found the hard way. Useful outside this project |
+| [`TECH_RESEARCH.md`](TECH_RESEARCH.md) | The measurement log, M1-M27, negative results included |
+| [`docs/adr/`](docs/adr/) | Three decisions: the interception mechanism, distribution, the Now Playing sink |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Layout and design constraints |
 
-## 開発
+The interesting part is what did **not** work. IOHIDManager, CGEventTap,
+`kIOHIDOptionsTypeSeizeDevice` and DriverKit were all eliminated by measurement:
+a Bluetooth headset tap never touches the HID path at all. So were per-device
+rules, and three other shapes of the Now Playing approach. `TECH_RESEARCH.md` has
+the evidence for each.
 
-必要なもの: Xcode 26系、[just](https://github.com/casey/just)、[XcodeGen](https://github.com/yonaskolb/XcodeGen)。
+## Development
 
-`project.yml` がプロジェクト定義のSSOTで、`noBudsMusic.xcodeproj`
-は生成物（コミットしない）。
+`project.yml` is the source of truth; `noBudsMusic.xcodeproj` is generated and
+not committed.
 
-``` bash
-just check
+```bash
+just check   # lint, build, test
+just logs    # what the app is doing
+just --list  # everything else
 ```
 
-lint、build、testを実行する。
+To sign with a real certificate instead of ad-hoc, put this in `.env`
+(gitignored):
 
-``` bash
-just run
+```bash
+NOBUDS_CODE_SIGN_IDENTITY="<certificate SHA-1>"   # security find-identity -v -p codesigning
+NOBUDS_DEVELOPMENT_TEAM="<team id>"
 ```
 
-ビルドして起動する。
+Without it the build is ad-hoc signed, which is fine — the app needs no
+permissions, so there is no TCC grant to lose when the signature changes.
 
-初回起動時にInput MonitoringとAccessibilityの権限を求められる。権限の状態はDiagnostics画面でも確認できる。
-
-### 署名と権限の維持
-
-TCCは権限を**署名IDに紐づける**。既定のアドホック署名はリビルドのたびに変わるため、
-そのままだと毎回権限が失効し、計測のたびに再許可が必要になる。
-
-実際の証明書で署名すればリビルドしても維持される。`.env`（gitignore対象）に設定する。
-
-``` bash
-security find-identity -v -p codesigning
-```
-
-``` bash
-# .env
-NOBUDS_CODE_SIGN_IDENTITY="<証明書のSHA-1>"
-NOBUDS_DEVELOPMENT_TEAM="<チームID>"
-```
-
-未設定ならアドホック署名にフォールバックする（追加設定なしでビルドは通る）。
-現在の設定は `just signing` で確認できる。
-
-署名IDを変更したときは一度だけ再許可が必要。
-
-``` bash
-just reset-permissions
-just run
-```
-
-観測ログ:
-
-``` bash
-just logs
-```
-
-Music.app起動そのものの追跡（`bluetoothd` / `mediaremoted`）:
-
-``` bash
-just logs-system
-```
-
-### 別のMacに入れる
-
-``` bash
-just release
-just deploy <ホスト名>
-```
-
-`rsync` は quarantine 属性を付けないので Gatekeeper に止められない。
-**Development 証明書での署名**なので、ダウンロードやAirDrop経由だと止められる。
-配布するなら Developer ID + notarization が要る（`docs/adr/0002-distribution-channel.md`）。
-
-対象マシンに Xcode があるなら、リポジトリごと持っていって `just run` のほうが確実。
-
-その他のレシピは `just --list` を参照。
-
-## 配布
-
-**先に実装、配布形態は後で決める。**
-
-App Storeはサンドボックス必須で、想定機構（`CGEventTap` + `IOHIDManager`）が
-サンドボックス下で成立するかは未検証。ただしそもそも遮断できるかが未計測なので、
-存在するか分からない機構に合わせて配布形態を先に決めることはしない。
-実装が動いてから評価し、App Storeが不可ならGitHubでOSSとして公開する。
-
-実装側にサンドボックス由来の制約は一切かけない。`docs/adr/0002-distribution-channel.md` を参照。
-
-バンドルID: `jp.kaizudenki.noBudsMusic`
-
-## ドキュメント
-
-- `TECH_RESEARCH.md` — 計測ログ（M1〜M27）。否定的な結果を含む
-- `docs/adr/` — 設計判断3件（遮断機構、配布形態、Now Playing方式）
-- `docs/macos-notes.md` — 開発中に判明したmacOSの挙動。このプロジェクト外でも通用するもの
-- `ARCHITECTURE.md` — 構成
-- `ROADMAP.md` / `TASKS.md` — 経緯と現状
-
-## ライセンス
+## License
 
 MIT

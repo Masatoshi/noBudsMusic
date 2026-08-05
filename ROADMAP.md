@@ -6,8 +6,9 @@ including negative results.
 
 ## Phase 1 - Skeleton (done)
 
-- SwiftUI menu bar app, resident, no Dock icon
-- Global Status ON/OFF
+- Menu bar app, resident, no Dock icon (SwiftUI at first; replaced by AppKit in
+  Phase 4 after three CPU spins)
+- Global on/off toggle
 - Settings persistence
 - Per-device rule model, identity, and storage
 - Devices screen

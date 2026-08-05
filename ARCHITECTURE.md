@@ -24,12 +24,15 @@ item.
 
 ## Data Flow
 
-1. `MPRemoteCommandCenter` delivers a command.
-2. `EventFilter` decides: Status ON and Play/Pause -> absorb, otherwise forward.
-3. `NowPlayingSink` logs the decision and its reason.
-4. The handler returns `.success` (absorbed) or `.noSuchContent` (forwarded).
+1. `MPRemoteCommandCenter` delivers a command, because this app holds the Now
+   Playing destination.
+2. `NowPlayingSink` logs it and answers `.noSuchContent`.
+3. `mediaremoted` passes the command to a real player if there is one, and
+   requests no launch if there is not.
 
-No device dimension exists at any step. MediaRemote does not carry one.
+There is no filtering step, and no device dimension at any point — MediaRemote
+carries neither. The only control is whether the app holds the destination at
+all, which is the Enabled toggle.
 
 ## Module Mapping
 
@@ -42,8 +45,7 @@ No device dimension exists at any step. MediaRemote does not carry one.
 | The mechanism | `Sources/NoBudsMusic/NowPlayingSink.swift` |
 | Single instance | `Sources/NoBudsMusic/SingleInstance.swift` |
 | Launch at login | `Sources/NoBudsMusic/LaunchAtLogin.swift` |
-| Decision rule | `Sources/NoBudsMusicCore/EventFilter.swift` |
-| Command vocabulary | `Sources/NoBudsMusicCore/MediaKey.swift` |
+| Command vocabulary, for the log | `Sources/NoBudsMusicCore/MediaKey.swift` |
 | App settings | `Sources/NoBudsMusicCore/AppSettings.swift` |
 | Identity | `Sources/NoBudsMusicCore/AppIdentity.swift` |
 

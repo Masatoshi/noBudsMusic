@@ -124,9 +124,6 @@ deploy host: release
 
 # --- Run -------------------------------------------------------------------
 
-# Ad-hoc signing means the Accessibility and Input Monitoring grants are lost
-# on every rebuild -- see `just reset-permissions`.
-#
 # Build and launch the app.
 run: build
     open {{app}}
@@ -135,21 +132,13 @@ run: build
 kill:
     -pkill -x NoBudsMusic
 
-# Open the settings window in the running instance without the menu bar item.
-settings:
-    open "nobudsmusic://settings"
-
-# A rebuild changes the ad-hoc signature, so stale grants must be dropped for
-# the prompts to appear again. Scoped to this bundle id only.
-#
-# Clear this app's Accessibility and Input Monitoring grants.
-reset-permissions:
-    tccutil reset Accessibility {{bundle_id}}
-    tccutil reset ListenEvent {{bundle_id}}
+# Re-show the menu bar item in the running instance, for when it was hidden.
+show:
+    open "nobudsmusic://show"
 
 # --- Diagnostics -----------------------------------------------------------
 
-# Live app log: every observed media key and the rule that decided its fate.
+# Live app log: every command received, and whether the slot is held.
 logs:
     log stream --predicate 'subsystem == "{{bundle_id}}"' --level debug
 
