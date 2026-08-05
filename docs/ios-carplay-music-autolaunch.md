@@ -274,7 +274,7 @@ No launch request was issued for that tap. So iOS reads the real playback state,
 not the declared one, and silence counts as playback. Neither duration nor
 volume is the variable — zero samples for one second was accepted.
 
-### Stopping gives it back, and `.noSuchContent` is what triggers that
+### An app that answers Play without playing is popped
 
 The app holds the destination only while it is playing. 1.4 seconds after the
 silence ended:
@@ -283,28 +283,43 @@ silence ended:
 mediaremoted: Posting ...nowPlayingApplicationIsPlayingDidChange with <Not Playing>
 ```
 
-And then, on the next tap:
+And then, on the next tap, iOS removes it from a **stack** of Now Playing
+applications, revealing whatever was underneath — which is why Audible surfaced
+and played:
 
 ```text
-17:53:23.226  Sending nowPlayingAppStackPopEligible
-17:53:23.235  Response: sendRemoteControlCommand returned with error ...
-              NoSuchContent
-17:53:28.236  [MediaServerNowPlayingDataSource] Popping nowPlayingAppStack..
+18:21:24.519  Sending nowPlayingAppStackPopEligible command...
+18:21:24.525  play answered   rawValue: 0        (.success)
+18:21:29.522  [MediaServerNowPlayingDataSource] Popping nowPlayingAppStack..
 ```
 
-iOS keeps a **stack** of Now Playing applications. Answering `.noSuchContent`
-marks the app pop-eligible, and five seconds later it is removed — revealing
-whatever was underneath, which is why Audible surfaced and played.
+**The return value is not what causes this.** That was the first reading here
+and it was wrong: the pop-eligible marking is sent at 24.519, *before* the app
+answers at 24.525, and the app was popped anyway while answering `.success` four
+times. It is a property of dispatching the Play command, not of the reply.
 
-**This is the opposite of what the return value does on macOS.** There it means
-"pass this on, I am staying"; the app keeps the destination indefinitely and
-that is the whole design (ADR 0003). On iOS the same value means "I have no
-content" and the system takes the slot away.
+What decides it is whether playback actually starts. A Play command is
+dispatched as pop-eligible; if the app that receives it has not begun playing
+about five seconds later, it comes off the stack. Which is a coherent rule — an
+app that will not play when told to play has no business holding the slot.
 
-So the macOS design does not port. On iOS, holding the destination costs
-continuous playback, and `.noSuchContent` actively gives it up. `.success` would
-not be popped, but M19 showed on macOS that it consumes the command and leaves
-real players uncontrollable; whether iOS behaves the same is not yet measured.
+So **a silent sink cannot work on iOS**, and no choice of return value rescues
+it. `.noSuchContent` and `.success` are popped alike.
+
+### What would hold the slot, and what it costs
+
+Playing real audio — a silent file, a generated buffer, anything that keeps the
+session running — does hold the slot, because that satisfies the rule above.
+The cost is the point of the whole design: an app that plays when tapped is
+consuming the tap, so Audible and YouTube can no longer be controlled from the
+headset. On macOS `.noSuchContent` bought exactly that (M24), and iOS does not
+sell it.
+
+That trade is not automatically wrong. For the CarPlay case the desired outcome
+is that connecting starts nothing, and an app that occupies the slot playing
+silence delivers precisely that. It is the headset case it gives up, not the one
+this investigation started from. Both should not be expected from one app on
+iOS.
 
 ## Unaffected by this document
 

@@ -14,6 +14,7 @@ struct ProofOfConceptView: View {
     @State private var tone = SilentTone()
     @State private var isHolding = false
     @State private var commandCount = 0
+    @State private var answerWithSuccess = false
 
     var body: some View {
         NavigationStack {
@@ -21,6 +22,27 @@ struct ProofOfConceptView: View {
                 Section("Destination") {
                     LabeledContent("Held", value: isHolding ? "yes" : "no")
                     LabeledContent("Commands seen", value: "\(commandCount)")
+                }
+
+                Section {
+                    Picker("Answer with", selection: $answerWithSuccess) {
+                        Text(".noSuchContent").tag(false)
+                        Text(".success").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: answerWithSuccess) { _, useSuccess in
+                        sink.commandResponse = useSuccess ? .success : .noSuchContent
+                    }
+                } footer: {
+                    Text(
+                        """
+                        `.noSuchContent` is the macOS design, and on iOS it makes \
+                        the app pop-eligible — the system removes it from the Now \
+                        Playing stack five seconds later. `.success` should keep \
+                        the slot, and may consume the command instead, which is \
+                        what M19 measured on macOS.
+                        """
+                    )
                 }
 
                 Section("Variant 1 — no audio") {

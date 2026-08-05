@@ -48,6 +48,20 @@ final class NowPlayingSink {
     /// so the iOS proof of concept can show something on screen in a car.
     var forwardedCommandCount: Int { forwarded }
 
+    /// What every handler answers.
+    ///
+    /// `.noSuchContent` on macOS, always — it is the decision ADR 0003 is built
+    /// on and nothing here should let it drift.
+    ///
+    /// It is settable because iOS turned out to read the value differently.
+    /// There, `.noSuchContent` marks the app pop-eligible and the system removes
+    /// it from the Now Playing stack five seconds later, so the one return value
+    /// that makes the macOS design work is the one that dismantles it. `.success`
+    /// should survive instead, at the risk of consuming the command the way M19
+    /// measured on macOS. Which trade is right on iOS is unmeasured, so the
+    /// proof of concept can switch it rather than the choice being baked in.
+    var commandResponse: MPRemoteCommandHandlerStatus = .noSuchContent
+
     // MARK: - Lifecycle
 
     /// Claims the destination. Idempotent.
@@ -197,10 +211,13 @@ final class NowPlayingSink {
     private func register(_ command: MPRemoteCommand, key: MediaKey) {
         command.isEnabled = true
         let token = command.addTarget { [weak self] _ in
-            self?.forwarded += 1
-            self?.logger.notice("\(key.rawValue, privacy: .public) forwarded")
-            // Never `.success`. See the note on this type.
-            return .noSuchContent
+            guard let self else { return .noSuchContent }
+            self.forwarded += 1
+            let response = self.commandResponse
+            self.logger.notice(
+                "\(key.rawValue, privacy: .public) answered \(String(describing: response), privacy: .public)"
+            )
+            return response
         }
         handlers.append((command, token))
     }
