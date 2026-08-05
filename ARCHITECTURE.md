@@ -19,7 +19,8 @@ See `docs/adr/0003-now-playing-sink.md` and `TECH_RESEARCH.md` M11.
 dependency. Everything that *decides* lives here, so it is unit-testable without
 a running app or a paired headset.
 
-**`NoBudsMusic`** — the app. Menu bar UI, the Now Playing sink, login item.
+**`NoBudsMusic`** — the app. AppKit menu bar item, the Now Playing sink, login
+item.
 
 ## Data Flow
 
@@ -34,7 +35,9 @@ No device dimension exists at any step. MediaRemote does not carry one.
 
 | Component | File |
 | --- | --- |
-| App entry, menu bar | `Sources/NoBudsMusic/NoBudsMusicApp.swift` |
+| App entry | `Sources/NoBudsMusic/main.swift` |
+| App lifecycle | `Sources/NoBudsMusic/AppDelegate.swift` |
+| Menu bar item and menu | `Sources/NoBudsMusic/StatusItemController.swift` |
 | App state | `Sources/NoBudsMusic/AppModel.swift` |
 | The mechanism | `Sources/NoBudsMusic/NowPlayingSink.swift` |
 | Single instance | `Sources/NoBudsMusic/SingleInstance.swift` |
@@ -59,10 +62,11 @@ advantage over noTunes and must not be spent on a polling fix for M18.
 **No permissions.** `MPRemoteCommandCenter` is not gated by TCC. The app needs
 neither Accessibility nor Input Monitoring.
 
-**No windows.** The app is a menu bar item and nothing else. Diagnostics live in
-`just logs`. A SwiftUI-hosted window in a `MenuBarExtra`-only app was one of two
-ways found to pin the main thread; the other was persisting an unchanged value
-from a binding. See `docs/macos-notes.md`.
+**No windows, and no SwiftUI.** The app is an `NSStatusItem` and nothing else.
+The SwiftUI `MenuBarExtra` version pinned the main thread at 100% CPU three
+times, in the same main-menu reconstruction loop, and each fix only closed one
+trigger. AppKit has no scene graph to invalidate. Diagnostics live in
+`just logs`. See `docs/macos-notes.md`.
 
 **Localised.** English base, Japanese in `Resources/ja.lproj`. Menu strings are
 keys, not literals.
