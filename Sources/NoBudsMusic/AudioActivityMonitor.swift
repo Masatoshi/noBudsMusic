@@ -102,17 +102,19 @@ final class AudioActivityMonitor: @unchecked Sendable {
 
     /// Whether any process other than this one is playing audio.
     var isAudioPlaying: Bool {
+        activeOutputDescription != nil
+    }
+
+    /// Who is producing audio output, for the log. `nil` when nothing is.
+    var activeOutputDescription: String? {
         if let byProcess = Self.processRunningOutput() {
-            if let name = byProcess.first {
-                logger.debug("audio output from \(name, privacy: .public)")
-            }
-            return !byProcess.isEmpty
+            return byProcess.isEmpty ? nil : byProcess.joined(separator: ", ")
         }
         // Process objects need macOS 14.2. Fall back to the device-level
         // answer, which cannot say who is playing but does say whether anyone
         // is.
-        guard let device = Self.defaultOutputDevice() else { return false }
-        return Self.isRunning(device)
+        guard let device = Self.defaultOutputDevice() else { return nil }
+        return Self.isRunning(device) ? "output device (no process detail)" : nil
     }
 
     /// Bundle identifiers of processes currently running audio output, or `nil`

@@ -1,5 +1,6 @@
 import Foundation
 import NoBudsMusicCore
+import os
 
 /// Owns settings and the sink.
 ///
@@ -16,6 +17,8 @@ final class AppModel {
     private let audio: AudioActivityMonitor?
 
     private(set) var settings: AppSettings
+
+    private let logger = Logger(subsystem: AppIdentity.logSubsystem, category: "app")
 
     /// Called after any setting changes, so the menu bar item can update.
     var onSettingsChanged: (@MainActor () -> Void)?
@@ -60,8 +63,21 @@ final class AppModel {
     /// during silence gets both halves right, because the bug can only happen
     /// during silence in the first place.
     private func syncSink() {
-        let isPlaying = audio?.isAudioPlaying ?? false
-        sink?.setEnabled(settings.isEnabled && !isPlaying)
+        let playing = audio?.activeOutputDescription
+        let shouldHold = settings.isEnabled && playing == nil
+
+        // Log the decision *and* its input. An earlier version logged neither,
+        // and when the app silently never claimed the destination there was
+        // nothing to go on.
+        logger.notice(
+            """
+            sink \(shouldHold ? "hold" : "release", privacy: .public) \
+            enabled=\(self.settings.isEnabled, privacy: .public) \
+            audio=\(playing ?? "silent", privacy: .public)
+            """
+        )
+
+        sink?.setEnabled(shouldHold)
     }
 
     // MARK: - Menu actions
