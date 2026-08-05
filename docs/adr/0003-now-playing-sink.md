@@ -31,8 +31,8 @@ surface.
 `HIDDeviceMonitor` and `MediaKeyEventTap` have been deleted. They controlled
 nothing once this decision was made, and keeping ~1,400 lines of inert code to
 hedge against a headset that might use HID over GATT is the speculative
-future-proofing this project rules out. They remain in the first commit if
-the measurement ever needs reproducing.
+future-proofing this project rules out. They remain in the first commit if the
+measurement ever needs reproducing.
 
 Removing them also removed every TCC dependency: the app now needs neither
 Accessibility nor Input Monitoring. That materially improves ADR 0002's inputs,
