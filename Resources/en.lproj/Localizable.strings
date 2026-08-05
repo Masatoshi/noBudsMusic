@@ -8,7 +8,7 @@
 "help.showInMenuBar" = "Hiding it keeps the app running. Open the app again to bring it back.";
 
 /* Tooltip on the main toggle */
-"help.block" = "Holds the Now Playing slot so macOS has somewhere to send Play / Pause. Commands are passed on to whatever is actually playing.";
+"help.block" = "Becomes the Now Playing destination so macOS has somewhere to send Play / Pause. Commands are passed on to whatever is actually playing.";
 
-/* Shown in Control Center while this app holds the Now Playing slot */
+/* Shown in Control Center while this app is the Now Playing destination */
 "nowPlaying.title" = "Preventing Music.app from launching";

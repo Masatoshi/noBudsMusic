@@ -56,7 +56,7 @@ final class NowPlayingSink {
         // consequence of answering `.success`, not of the state itself — with
         // `.noSuchContent` they take the destination back as soon as they play.
         // Control Center shows this app whenever nothing else is playing, and
-        // that cannot be avoided: occupying the Now Playing slot means
+        // that cannot be avoided: being the Now Playing destination means
         // appearing in Now Playing. Measured — omitting the title only falls
         // back to the app name, so the choice is what the line says, not
         // whether it appears.
@@ -65,7 +65,7 @@ final class NowPlayingSink {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
             MPMediaItemPropertyTitle: NSLocalizedString(
                 "nowPlaying.title",
-                comment: "Shown in Control Center while holding the slot"
+                comment: "Shown in Control Center while holding the destination"
             ),
             MPMediaItemPropertyArtwork: Self.makeArtwork(),
             MPNowPlayingInfoPropertyPlaybackRate: 0.0,

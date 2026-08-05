@@ -39,7 +39,7 @@ Every Bluetooth headset reaches `mediaremoted` as `com.apple.bluetoothd`, with
 a keyboard media key. Per-device behaviour is not possible on this path with
 public API. `MRMediaRemoteGetNowPlayingApplicationPID` is private.
 
-### macOS launches a player when the Now Playing destination is empty
+### macOS launches a player when there is no Now Playing destination
 
 That is the whole mechanism behind Music.app opening by itself:
 
@@ -48,7 +48,7 @@ mediaremoted: Destination app com.apple.Music not available for command
               <command = Play>, and command requested a launch.
 ```
 
-Occupying the destination removes the reason to launch.
+Registering as that destination removes the reason to launch.
 
 ### `.playing` versus `.paused`, and `.success` versus `.noSuchContent`
 
@@ -71,7 +71,7 @@ An app can hold the destination without producing any audio.
 
 ### Appearing in Control Center is unavoidable
 
-While an app holds the slot, Control Center lists it. Omitting
+While an app holds the destination, Control Center lists it. Omitting
 `MPMediaItemPropertyTitle` does not hide the entry — the display falls back to
 the app name. The only choice is what the line says.
 

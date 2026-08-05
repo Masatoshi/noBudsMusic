@@ -7,7 +7,7 @@ Stops Music.app from launching itself when you tap a Bluetooth headset.
 ## The problem
 
 On macOS 26, tapping a Bluetooth headset can open Music.app even when nothing
-was playing and you never asked for it:
+was playing and you did not intend it:
 
 ```text
 mediaremoted: Destination app com.apple.Music not available for command
@@ -23,10 +23,10 @@ Disabling `com.apple.rcd` does not help.
 
 `bluetoothd` sends the tap to `mediaremoted` as a MediaRemote command, which
 routes it to whatever holds the Now Playing destination — and launches a player
-when nothing does. That empty slot is the bug.
+when there is no destination. That is what leads to Music.app opening by itself.
 
-So the app occupies the slot and gets out of the way. Every command it receives
-is answered with `.noSuchContent`:
+This app becomes the Now Playing destination and touches nothing else. Every
+command it receives is answered with `.noSuchContent`:
 
 ```text
 something is playing   → mediaremoted passes the command to it, as normal
@@ -35,21 +35,23 @@ nothing is playing     → the command goes nowhere, and no launch is requested
 
 Answering `.success` would also prevent the launch, but it consumes the command,
 and then a paused YouTube tab can no longer be resumed from the headset. That one
-return value is the whole design; it took eight measured dead ends to find.
+return value is the key to the design; eight other approaches were rejected by
+measurement before it.
 
 Consequences:
 
-- **No permissions.** No Accessibility, no Input Monitoring, no event tap.
+- **No additional permissions.** No Accessibility, no Input Monitoring, no event
+  tap.
 - **No polling.** No timer and no observer loop; the app is woken only when a
   command arrives.
-- **Runs sandboxed**, with nothing degraded.
+- **Runs entirely within the App Sandbox.**
 - **Media and volume keys are unaffected**, because everything is forwarded.
 - **No per-device settings**, and there cannot be: a MediaRemote command carries
   no device identity. Every headset arrives as `com.apple.bluetoothd`.
 
 ## Install
 
-Requires macOS 14+, though it is only tested on macOS 26 / Apple Silicon.
+May work on macOS 14 and later; only tested on macOS 26 / Apple Silicon.
 
 There are no signed releases yet, so building it is the only way to run it. That
 needs Xcode 26 and two build tools:
@@ -78,11 +80,11 @@ Quit
 Hiding the menu bar item keeps the app running. To bring it back, open the app
 again from the Finder or Spotlight, or run `just show`.
 
-While the app holds the slot and nothing else is playing, Control Center lists it
-as *Preventing Music.app from launching*. That is unavoidable — occupying the Now
-Playing slot means appearing in Now Playing — and it is accurate, because at that
-moment the app really is the destination. When something is playing, that app is
-shown instead.
+While the app holds the Now Playing destination and nothing else is playing,
+Control Center lists it as *Preventing Music.app from launching*. That is
+unavoidable — being the Now Playing destination means appearing in Now Playing —
+and it is accurate, because at that moment the app really is the destination.
+When something is playing, that app is shown instead.
 
 ## Verified behaviour
 
@@ -100,36 +102,36 @@ Tested on two machines with Redmi Buds 6 Lite and Pixel Buds A-Series:
 ## Relationship to noTunes
 
 [noTunes](https://github.com/tombonez/noTunes) solves a broader problem: it stops
-Music.app from opening whatever caused it — clicking the icon, following a link,
-a headset tap, anything.
+Music.app from opening whatever prompted it — clicking the icon, following a
+link, a headset tap, anything.
 
 This app addresses one specific cause. It removes the condition that makes
 `mediaremoted` launch a player, and does nothing about any other route into
 Music.app.
 
-So they are not really substitutes. If you want Music.app never to open, noTunes
-covers far more ground. If the only time it opens is when you tap your earbuds,
-this is a narrower fix that needs no permissions and nothing running at rest.
+They are not substitutes. If you want Music.app never to open, noTunes covers far
+more ground. This app addresses the Bluetooth headset tap and nothing else.
 
 ## Documentation
 
 | File | What it is |
 | --- | --- |
-| [`docs/macos-notes.md`](docs/macos-notes.md) | macOS behaviour found the hard way. Useful outside this project |
-| [`TECH_RESEARCH.md`](TECH_RESEARCH.md) | The measurement log, M1-M27, negative results included |
+| [`docs/macos-notes.md`](docs/macos-notes.md) | macOS behaviour observed during development. Applies outside this project |
+| [`TECH_RESEARCH.md`](TECH_RESEARCH.md) | Measurement log, M1-M27, negative results included |
 | [`docs/adr/`](docs/adr/) | Three decisions: the interception mechanism, distribution, the Now Playing sink |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Layout and design constraints |
 
-The interesting part is what did **not** work. IOHIDManager, CGEventTap,
+**The approaches that did not work are recorded too.** IOHIDManager, CGEventTap,
 `kIOHIDOptionsTypeSeizeDevice` and DriverKit were all eliminated by measurement:
 a Bluetooth headset tap never touches the HID path at all. So were per-device
-rules, and three other shapes of the Now Playing approach. `TECH_RESEARCH.md` has
+rules, and three other forms of the Now Playing approach. `TECH_RESEARCH.md` has
 the evidence for each.
 
 ## Development
 
-`project.yml` is the source of truth; `noBudsMusic.xcodeproj` is generated and
-not committed.
+`project.yml` is the project definition. `noBudsMusic.xcodeproj` is generated
+from it, so it is not in the repository; the build recipes regenerate it each
+time.
 
 ```bash
 just check   # lint, build, test
@@ -138,7 +140,7 @@ just --list  # everything else
 ```
 
 Builds are ad-hoc signed. That is fine for development — the app requests no
-permissions, so there is no grant to lose when the signature changes.
+additional permissions, so there is no grant to lose when the signature changes.
 
 ## License
 

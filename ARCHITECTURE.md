@@ -10,7 +10,8 @@ Bluetooth headset -> bluetoothd -> mediaremoted -> Now Playing destination
                                              discards Play/Pause
 ```
 
-There is no interception. The app is not in the path; it *is* the destination.
+There is no interception. The app is not in the path; it becomes the Now Playing
+destination, so there is never a missing one.
 See `docs/adr/0003-now-playing-sink.md` and `TECH_RESEARCH.md` M11.
 
 ## Two Layers
@@ -61,8 +62,8 @@ layers. They are in the first commit if the measurement ever needs redoing.
 command arrives. No timer, no observer loop, no cost at rest. That is the main
 advantage over noTunes and must not be spent on a polling fix for M18.
 
-**No permissions.** `MPRemoteCommandCenter` is not gated by TCC. The app needs
-neither Accessibility nor Input Monitoring.
+**No additional permissions.** `MPRemoteCommandCenter` is not gated by TCC. The
+app needs neither Accessibility nor Input Monitoring.
 
 **No windows, and no SwiftUI.** The app is an `NSStatusItem` and nothing else.
 The SwiftUI `MenuBarExtra` version pinned the main thread at 100% CPU three

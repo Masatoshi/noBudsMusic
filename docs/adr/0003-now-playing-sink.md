@@ -52,8 +52,8 @@ to find:
 - `.noSuchContent` also prevents the launch, and `mediaremoted` passes the
   command on to whatever is actually playing (M24).
 
-**The app therefore blocks nothing.** It occupies a slot that must not be empty,
-because an empty slot is what makes macOS launch a player. Everything that
+**The app therefore blocks nothing.** It registers itself as the destination,
+because the absence of one is what makes macOS launch a player. Everything that
 arrives is passed straight through.
 
 Public API, no TCC grant, sandbox-compatible, and passive — no timer, no
