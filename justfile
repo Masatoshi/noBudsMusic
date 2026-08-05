@@ -116,7 +116,7 @@ release: generate
 # blocked. Proper distribution needs Developer ID plus notarization; see
 # docs/adr/0002-distribution-channel.md.
 #
-# Copy the Release build to another Mac over ssh, e.g. `just deploy Cherry`.
+# Copy the Release build to another Mac over ssh, e.g. `just deploy my-laptop`.
 deploy host: release
     rsync -a --delete {{release_app}} {{host}}:/Applications/
     @echo "copied to {{host}}:/Applications/NoBudsMusic.app"
