@@ -58,17 +58,9 @@ just run
 Build prerequisites: Xcode 26, [just](https://github.com/casey/just),
 [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
-To put it on another Mac you own:
-
-```bash
-just release
-just deploy <hostname>
-```
-
-`rsync` does not set the quarantine attribute, so Gatekeeper does not block the
-copy. The build is signed with a *development* certificate, so the same bundle
-downloaded or AirDropped **would** be blocked — real distribution needs Developer
-ID and notarization. See [ADR 0002](docs/adr/0002-distribution-channel.md).
+There are no signed releases yet; building it is the only way to run it. See
+[ADR 0002](docs/adr/0002-distribution-channel.md) for why, and what would change
+that.
 
 ## Using it
 

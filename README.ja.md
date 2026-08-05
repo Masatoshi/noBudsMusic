@@ -57,17 +57,8 @@ just run
 必要なもの: Xcode 26系、[just](https://github.com/casey/just)、
 [XcodeGen](https://github.com/yonaskolb/XcodeGen)。
 
-自分の別のMacに入れる場合:
-
-```bash
-just release
-just deploy <ホスト名>
-```
-
-`rsync` は quarantine 属性を付けないので Gatekeeper に止められない。ただし
-**Development 証明書での署名**なので、同じものをダウンロードやAirDropで渡すと止められる。
-本格的な配布には Developer ID と notarization が要る
-（[ADR 0002](docs/adr/0002-distribution-channel.md)）。
+署名済みのリリースはまだ無いので、動かすにはビルドするしかない。理由と、それが
+変わる条件は [ADR 0002](docs/adr/0002-distribution-channel.md) にある。
 
 ## 使い方
 
