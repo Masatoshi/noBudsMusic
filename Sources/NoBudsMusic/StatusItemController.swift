@@ -27,15 +27,16 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     func refresh() {
         statusItem.isVisible = model.settings.showsMenuBarItem
 
-        // `music.note.square` does not exist; `music.note.tv` is the closest
-        // real symbol — a rounded rectangle containing a note. Filled while
-        // blocking.
-        let symbol = model.settings.isEnabled ? "music.note.tv.fill" : "music.note.tv"
+        // A plain single note, in both states. `music.note.slash` exists but
+        // reads as "music is blocked", which is the opposite of what the off
+        // state means here — the app is doing nothing when off. Dimming is
+        // unambiguous and keeps the icon to one glyph.
         statusItem.button?.image = NSImage(
-            systemSymbolName: symbol,
+            systemSymbolName: "music.note",
             accessibilityDescription: "noBudsMusic"
         )
         statusItem.button?.image?.isTemplate = true
+        statusItem.button?.appearsDisabled = !model.settings.isEnabled
     }
 
     // MARK: - NSMenuDelegate
@@ -43,13 +44,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        menu.addItem(
-            toggle(
-                title: NSLocalizedString("menu.block", comment: "Main toggle"),
-                isOn: model.settings.isEnabled,
-                action: #selector(toggleEnabled)
-            )
+        let mainItem = toggle(
+            title: NSLocalizedString("menu.block", comment: "Main toggle"),
+            isOn: model.settings.isEnabled,
+            action: #selector(toggleEnabled)
         )
+        mainItem.toolTip = NSLocalizedString("help.block", comment: "What the app does")
+        menu.addItem(mainItem)
 
         menu.addItem(.separator())
 

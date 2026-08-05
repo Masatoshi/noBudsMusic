@@ -1,8 +1,11 @@
 /* Menu bar */
-"menu.block" = "Block Play/Pause";
+"menu.block" = "Prevent Music.app from launching";
 "menu.showInMenuBar" = "Show in Menu Bar";
 "menu.launchAtLogin" = "Launch at Login";
 "menu.quit" = "Quit";
 
 /* Help text */
 "help.showInMenuBar" = "Hiding it keeps the app running. Open the app again to bring it back.";
+
+/* Tooltip on the main toggle */
+"help.block" = "Holds the Now Playing slot so macOS has somewhere to send Play / Pause. Commands are passed on to whatever is actually playing.";

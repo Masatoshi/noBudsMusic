@@ -47,24 +47,30 @@ Swift製のバックグラウンド常駐アプリ。メニューバー項目の
 
 ## 動作仕様
 
-Now Playing宛先を保持し、Play/Pauseコマンドを受け取って破棄する。
+**このアプリは何も遮断しない。** Now Playing の宛先を占有するだけ。
+
+`mediaremoted` は Play コマンドを Now Playing 宛先へ送り、**宛先が空のときに
+プレイヤーを起動する**。これが Music.app 自動起動の直接原因なので、席を埋めて
+おけば起動する理由が消える。
+
+受け取ったコマンドは `.noSuchContent` で返す。これにより:
 
 ``` text
-Status ON
-  → Now Playing宛先を保持し、Play/Pauseを破棄する
-  → Next / Previous は転送するので、他のジェスチャは動作する
-
-Status OFF
-  → 宛先を解放する。何も破棄しない
+再生中のアプリがある  → mediaremoted がそちらへ転送する（操作は普通に効く）
+どこにも送り先がない  → 何も起きない。起動も要求されない
 ```
 
-再生中のアプリがあれば、そのアプリが宛先を取得する。その間このアプリは関与しない。
+`.success`（消費する）でも起動は防げるが、コマンドがどこにも届かなくなり、
+再生中のアプリを操作できなくなる。この戻り値ひとつが設計の要。
 
-**デバイスごとの設定は持たない。** MediaRemoteコマンドには送信元デバイスの識別情報が
-無く、すべて `com.apple.bluetoothd` として届くため、機器を区別することが原理的にできない。
-詳細は `docs/adr/0003-now-playing-sink.md`。
+**デバイスごとの設定は持たない。** MediaRemoteコマンドには送信元デバイスの
+識別情報が無く、すべて `com.apple.bluetoothd` として届くため、機器を区別する
+ことが原理的にできない。
 
 **権限を一切必要としない。** アクセシビリティも入力監視も不要。
+
+**常駐コストはほぼゼロ。** タイマーも監視ループも無く、コマンドが来たときだけ
+起きる。
 
 ## メニューバー
 
@@ -86,12 +92,10 @@ Quit
 
 ## 成功条件
 
-実機で以下を満たすこと。デバイス個別設定を前提とした項目は ADR 0003 により削除した。
-
 1. Status ONでイヤホンをタップしてもMusic.appが起動しない
 2. Status OFFでは通常どおり動作する
-3. キーボードのPlay/Pauseは影響を受けない
-4. USBデバイスのPlay/Pauseは影響を受けない
+3. キーボードのPlay / Pauseは影響を受けない
+4. USBデバイスのPlay / Pauseは影響を受けない
 5. 音量キーは影響を受けない
 6. イヤホンの音声出力とマイクは影響を受けない
 7. AirPlayは影響を受けない
@@ -104,26 +108,18 @@ Quit
 
 ## 現在の実装状況
 
-**Phase 2（観測）完了。遮断の見込みは立っていない。**
+**動作する。** 実機（Pixel Buds A-Series）で確認済み。
 
-計測の結果、**Bluetoothイヤホンのタップはユーザー空間で遮断できない**ことが判明した。
-タップはHIDデバイスもHIDレポートも `NX_SYSDEFINED` イベントも生成せず、`bluetoothd`
-が直接MediaRemoteコマンドを発行している。
+- イヤホンをタップしてもMusic.appが起動しない
+- YouTube / Amazon Music は、一度再生していればイヤホンから操作できる
+- 再生中のアプリが宛先を取り返し、その間このアプリは関与しない
 
-```text
-bluetoothd  --(MediaRemote command: Play)-->  mediaremoted  -->  Now Playing宛先
-```
+そこに至るまでに4つの案を計測で潰している。詳細は `TECH_RESEARCH.md`（M1〜M24）、
+判断は `docs/adr/`。当初の候補（IOHIDManager / CGEventTap / IOHID seize /
+DriverKit）は**すべて成立しない** — イヤホンのタップはHID経路に一切現れず、
+`bluetoothd` が直接MediaRemoteコマンドを発行しているため。
 
-このため当初の候補（IOHIDManager / CGEventTap / IOHID seize / DriverKit）は
-**4つとも成立しない**。詳細は `TECH_RESEARCH.md` のM11、判断は
-`docs/adr/0001-event-interception-approach.md`（Rejected）。
-
-残る公開APIの案は「遮断」ではなく「宛先を用意する」方向だが、
-**デバイス個別設定が原理的に不可能**になり、キーボードやControl Centerの操作まで
-吸ってしまうリスクがある。仕様レベルの判断が必要な段階。
-
-動作するもの: 判定ロジック、デバイス識別、設定保存、Devices／Diagnostics画面、
-HID観測（`HIDDeviceMonitor`）、常駐と復帰導線。
+未検証: キーボードの専用メディアキー（転送されるはずだが未確認）。
 
 ## 開発
 

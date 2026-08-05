@@ -4,8 +4,9 @@ import os
 
 /// Owns settings and the sink.
 ///
-/// Deliberately thin: the decision rule lives in `NoBudsMusicCore.EventFilter`
-/// and the mechanism in `NowPlayingSink`.
+/// Deliberately thin. There is no filtering logic left anywhere: the app either
+/// holds the Now Playing destination or it does not, and everything it receives
+/// while holding it is forwarded (ADR 0003).
 ///
 /// Not observable. The menu reads current state each time it opens, which is
 /// simpler than propagating change notifications and is what removed the last
@@ -14,7 +15,6 @@ import os
 final class AppModel {
     private let settingsStore: SettingsStoring
     private let sink: NowPlayingSink?
-    private let audio: AudioActivityMonitor?
 
     private(set) var settings: AppSettings
 
@@ -27,7 +27,6 @@ final class AppModel {
         self.settingsStore = settingsStore
         self.settings = settingsStore.load()
         self.sink = installsSink ? NowPlayingSink() : nil
-        self.audio = installsSink ? AudioActivityMonitor() : nil
     }
 
     var isHoldingDestination: Bool { sink?.isHoldingDestination ?? false }
@@ -35,10 +34,6 @@ final class AppModel {
     // MARK: - Lifecycle
 
     func start() {
-        audio?.onChange = { [weak self] _ in
-            Task { @MainActor in self?.syncSink() }
-        }
-        audio?.start()
         syncSink()
 
         // The system truth wins over the persisted value: the user can revoke
@@ -50,34 +45,7 @@ final class AppModel {
     }
 
     func stop() {
-        audio?.stop()
         sink?.deactivate()
-    }
-
-    /// The sink holds the Now Playing destination only while the app is enabled
-    /// *and* nothing else is playing audio.
-    ///
-    /// That second condition is the whole design. Declaring `.playing`
-    /// unconditionally steals the destination from real players (M19);
-    /// declaring `.paused` never wins it at all (M21). Holding `.playing` only
-    /// during silence gets both halves right, because the bug can only happen
-    /// during silence in the first place.
-    private func syncSink() {
-        let playing = audio?.activeOutputDescription
-        let shouldHold = settings.isEnabled && playing == nil
-
-        // Log the decision *and* its input. An earlier version logged neither,
-        // and when the app silently never claimed the destination there was
-        // nothing to go on.
-        logger.notice(
-            """
-            sink \(shouldHold ? "hold" : "release", privacy: .public) \
-            enabled=\(self.settings.isEnabled, privacy: .public) \
-            audio=\(playing ?? "silent", privacy: .public)
-            """
-        )
-
-        sink?.setEnabled(shouldHold)
     }
 
     // MARK: - Menu actions
@@ -85,8 +53,6 @@ final class AppModel {
     func setEnabled(_ enabled: Bool) {
         guard settings.isEnabled != enabled else { return }
         settings.isEnabled = enabled
-        // Off must release the destination, not merely stop absorbing: holding
-        // it while doing nothing would still displace a real player.
         syncSink()
         commit()
     }
@@ -102,6 +68,11 @@ final class AppModel {
         guard settings.launchesAtLogin != result else { return }
         settings.launchesAtLogin = result
         commit()
+    }
+
+    private func syncSink() {
+        logger.notice("sink \(self.settings.isEnabled ? "hold" : "release", privacy: .public)")
+        sink?.setEnabled(settings.isEnabled)
     }
 
     private func commit() {

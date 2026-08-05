@@ -1,6 +1,6 @@
 # ADR 0003: Now Playing sink, and dropping per-device rules
 
-- Status: **Proposed** — the direction is decided; viability is being measured.
+- Status: **Accepted** — measured working end to end (M24).
 - Date: 2026-08-05
 - Deciders: repository owner
 
@@ -38,11 +38,26 @@ Removing them also removed every TCC dependency: the app now needs neither
 Accessibility nor Input Monitoring. That materially improves ADR 0002's inputs,
 which is noted there rather than reopened here.
 
-### 2. Become the Now Playing destination and discard the command
+### 2. Occupy the Now Playing destination, and forward everything
 
-When Status is ON, register with `MPRemoteCommandCenter` and
-`MPNowPlayingInfoCenter` so the Play command has somewhere to go, and do nothing
-with it. Public API, no TCC grant, sandbox-compatible.
+When enabled, register with `MPRemoteCommandCenter` and
+`MPNowPlayingInfoCenter` so the Play command has somewhere to go — then answer
+**`.noSuchContent`**, never `.success`.
+
+That single return value is the whole design, and it took four measured failures
+to find:
+
+- `.success` prevents the launch but consumes the command, so real players
+  become uncontrollable (M19).
+- `.noSuchContent` also prevents the launch, and `mediaremoted` passes the
+  command on to whatever is actually playing (M24).
+
+**The app therefore blocks nothing.** It occupies a slot that must not be empty,
+because an empty slot is what makes macOS launch a player. Everything that
+arrives is passed straight through.
+
+Public API, no TCC grant, sandbox-compatible, and passive — no timer, no
+observer loop, nothing running at rest.
 
 ## Why this is not obviously safe
 
@@ -63,7 +78,8 @@ risks, in descending order of how likely they are to sink the approach.
    what should happen. But M18 shows the app never reclaims it afterwards, so
    the protection is absent from then on.
 
-Risk 1 was **wrongly cleared** by M17 and then confirmed by M19. Amazon Music
+**Resolved by `.noSuchContent`.** Risk 1 was wrongly cleared by M17, confirmed by
+M19, Amazon Music
 took the destination back, but Chrome did not: with `playbackState = .playing`
 this app stole the destination mid-YouTube and swallowed its Play/Pause. M17
 generalised from one player.
@@ -102,15 +118,22 @@ it must not be spent to solve M18. A periodic re-assertion of the Now Playing
 state would reintroduce a polling loop *and* risk stealing the destination from
 a playing app. Any fix for M18 has to be event-driven or it is not worth having.
 
-## What is being measured
+## What was measured
 
-1. Can the app become the Now Playing destination with public API alone, without
-   producing audio?
-2. Does a headset tap then route to it, and does Music.app stop launching?
-3. What happens to a keyboard Play/Pause while it holds the destination?
-4. What happens when another app is playing — is the destination stolen?
-5. Can the destination be relinquished and re-claimed, so it can be held
-   conditionally?
+1. Can the app become the destination with public API alone, without producing
+   audio? **Yes** (M12).
+2. Does a headset tap route to it, and does Music.app stop launching?
+   **Yes** (M15).
+3. What happens to other players while it holds the destination? With
+   `.success`, they lose control (M19). With `.noSuchContent`, they keep it
+   (M24).
+4. Is the destination stolen from a playing app? Not with `.noSuchContent` —
+   real players take it back as soon as they play (M24).
+5. Can the destination be released and reclaimed? **Yes** (M13).
+
+Three intermediate designs were measured and discarded: `.paused` (never chosen
+as the destination, M21), audio-activity gating (`IsRunningOutput` means "has a
+stream", not "is playing", M23), and `.success` (M19).
 
 Results are in `TECH_RESEARCH.md`. Answered so far: 1 yes (M12), 2 yes (M15),
 4 no — the destination is not stolen from a playing app (M17), 5 yes (M13).

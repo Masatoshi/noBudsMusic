@@ -405,14 +405,31 @@ only the second one matters. The API that reports the holder
 
 Three forms measured, none correct in both columns.
 
+**M24. `.noSuchContent` prevents the launch *and* lets real players keep
+control.** This is the design.
+
+Holding the destination permanently and answering `.noSuchContent` to every
+command:
+
+- `requested a launch`: **0** over the test window, and Music.app never started.
+- YouTube and Amazon Music remained controllable from the headset, provided they
+  had been playing at some point — `mediaremoted` passes the command on to the
+  last real player.
+- Real players take the destination back when they start playing; the app is not
+  in their way.
+
+The app blocks nothing. It occupies a slot that must not be empty, because an
+empty slot is what makes macOS launch a player.
+
+Answering `.success` prevents the launch too, but consumes the command, which is
+what made real players uncontrollable (M19). The entire design turns on this one
+return value.
+
 ### Still unmeasured
 
-- **Does returning `.noSuchContent` for Play fall through to the next player
-  without launching Music?** If it does, the sink could hold the destination
-  permanently and still let real players be controlled. `NextTrack` is already
-  forwarded that way and no launch followed it — suggestive, but not the same
-  command.
-- **Does a keyboard media key reach the sink?** ADR 0003 risk 2. If it does,
+- **Does a keyboard media key reach the sink?** Now largely moot: the sink
+  forwards everything, so a media key reaches whatever is actually playing, the
+  same as before the app existed. Worth confirming once. ADR 0003 risk 2. If it does,
   criterion 5 fails for as long as the destination is held.
 
 Criterion 1 passing does not clear this. A fix that stops Music launching while

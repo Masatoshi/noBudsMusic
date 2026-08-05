@@ -1,22 +1,15 @@
 import Foundation
 
-/// A remote control command this app is asked to handle.
+/// A remote control command, for the log.
 ///
-/// Deliberately tiny. It used to carry `NX_KEYTYPE_*` raw values and a HID
-/// Consumer usage mapping, because the app expected to classify events off the
-/// HID and event-tap paths. `TECH_RESEARCH.md` M11 eliminated both: commands
-/// arrive through `MPRemoteCommandCenter`, already identified, so there is
-/// nothing left to classify.
+/// Nothing branches on this any more. The app forwards every command it
+/// receives — it occupies the Now Playing destination rather than filtering it
+/// (ADR 0003) — so this exists only so the log says which command arrived.
 public enum MediaKey: String, Sendable, CaseIterable {
     /// Play, Pause and Play/Pause collapse to one case. A headset tap is a
-    /// single gesture, and which transport state it resolves to is not this
-    /// app's business — only whether it should reach a player.
+    /// single gesture, and which transport state it resolves to is the real
+    /// player's business, not this app's.
     case play
     case next
     case previous
-
-    /// The only command this app may absorb.
-    public var isPlayPause: Bool {
-        self == .play
-    }
 }
