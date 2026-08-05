@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MediaPlayer
 import NoBudsMusicCore
@@ -66,6 +67,7 @@ final class NowPlayingSink {
                 "nowPlaying.title",
                 comment: "Shown in Control Center while holding the slot"
             ),
+            MPMediaItemPropertyArtwork: Self.artwork(),
             MPNowPlayingInfoPropertyPlaybackRate: 0.0,
             MPMediaItemPropertyPlaybackDuration: 0.0,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
@@ -97,6 +99,48 @@ final class NowPlayingSink {
             activate()
         } else {
             deactivate()
+        }
+    }
+
+    /// A red music note, drawn rather than shipped as an asset.
+    ///
+    /// Control Center leaves an empty square where the artwork would be, and an
+    /// empty square next to an unfamiliar app name reads as something broken.
+    /// Rendering the same glyph as the menu bar item ties the two together.
+    ///
+    /// Red because this is the one state where the app is doing something, and
+    /// because a monochrome note would be indistinguishable from a real track
+    /// with missing artwork.
+    static func artwork() -> MPMediaItemArtwork {
+        MPMediaItemArtwork(boundsSize: CGSize(width: 512, height: 512)) { size in
+            let image = NSImage(size: size)
+            image.lockFocus()
+            defer { image.unlockFocus() }
+
+            let side = min(size.width, size.height)
+            let configuration = NSImage.SymbolConfiguration(
+                pointSize: side * 0.62,
+                weight: .medium
+            )
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.systemRed]))
+
+            guard
+                let note = NSImage(
+                    systemSymbolName: "music.note",
+                    accessibilityDescription: nil
+                )?.withSymbolConfiguration(configuration)
+            else { return image }
+
+            let noteSize = note.size
+            note.draw(
+                in: NSRect(
+                    x: (size.width - noteSize.width) / 2,
+                    y: (size.height - noteSize.height) / 2,
+                    width: noteSize.width,
+                    height: noteSize.height
+                )
+            )
+            return image
         }
     }
 
