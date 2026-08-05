@@ -63,8 +63,14 @@ risks, in descending order of how likely they are to sink the approach.
    what should happen. But M18 shows the app never reclaims it afterwards, so
    the protection is absent from then on.
 
-Risk 1 is **cleared** by M17: an actively playing app takes the destination and
-this app yields. Risk 2 remains unverified and is now the single thing standing
+Risk 1 was **wrongly cleared** by M17 and then confirmed by M19. Amazon Music
+took the destination back, but Chrome did not: with `playbackState = .playing`
+this app stole the destination mid-YouTube and swallowed its Play/Pause. M17
+generalised from one player.
+
+`playbackState = .paused` (M20) makes the app yield to anything actually
+playing. Whether it still catches the empty case is unverified, and that is now
+the question the ADR turns on. Risk 2 remains unverified and is now the single thing standing
 between this design and acceptance.
 
 The remaining shape of the problem: **the app must hold the destination only

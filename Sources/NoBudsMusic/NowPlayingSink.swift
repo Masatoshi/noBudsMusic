@@ -53,7 +53,19 @@ final class NowPlayingSink {
             MPMediaItemPropertyPlaybackDuration: 0.0,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
         ]
-        MPNowPlayingInfoCenter.default().playbackState = .playing
+
+        // `.paused`, not `.playing`.
+        //
+        // Declaring `.playing` made this app outrank real players: it took the
+        // destination from Chrome mid-YouTube and swallowed its Play/Pause
+        // (M19). macOS ranks a playing app above a paused one, so `.paused`
+        // should let anything actually playing win while still leaving this app
+        // as the destination when nothing else wants it — which is the only
+        // moment the bug can occur.
+        //
+        // Unverified whether a paused app still receives commands at all. If it
+        // does not, this approach has no safe form.
+        MPNowPlayingInfoCenter.default().playbackState = .paused
 
         isActive = true
         logger.notice("claimed the Now Playing destination")
