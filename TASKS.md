@@ -36,7 +36,9 @@ Kept here because the reasons matter more than the outcomes.
   currently signed with a development certificate, which is fine for machines it
   is copied to over `rsync` but not for anything downloaded.
 - Developer ID signing and notarization, so the built app can be distributed to
-  people who will not build from source.
+  people who will not build from source. When that exists, both READMEs need an
+  install section per channel — GitHub Releases, and Homebrew if it gets a cask.
+  Until then they correctly say building is the only way.
 
 ## Not planned
 

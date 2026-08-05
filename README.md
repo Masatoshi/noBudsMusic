@@ -51,16 +51,18 @@ Consequences:
 
 Requires macOS 14+, though it is only tested on macOS 26 / Apple Silicon.
 
+There are no signed releases yet, so building it is the only way to run it. That
+needs Xcode 26 and two build tools:
+
 ```bash
+brew install just xcodegen
 just run
 ```
 
-Build prerequisites: Xcode 26, [just](https://github.com/casey/just),
-[XcodeGen](https://github.com/yonaskolb/XcodeGen).
+The app appears in the menu bar; there is no window and no Dock icon.
 
-There are no signed releases yet; building it is the only way to run it. See
-[ADR 0002](docs/adr/0002-distribution-channel.md) for why, and what would change
-that.
+See [ADR 0002](docs/adr/0002-distribution-channel.md) for why there is no
+download, and what would change that.
 
 ## Using it
 

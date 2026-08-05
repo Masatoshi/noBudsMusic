@@ -50,15 +50,18 @@ YouTube をイヤホンから再開できなくなる。**この戻り値ひと�
 
 macOS 14以降で動くはずだが、検証は macOS 26 / Apple Silicon のみ。
 
+署名済みのリリースはまだ無いので、動かすにはビルドするしかない。Xcode 26系と
+ビルドツール2つが要る。
+
 ```bash
+brew install just xcodegen
 just run
 ```
 
-必要なもの: Xcode 26系、[just](https://github.com/casey/just)、
-[XcodeGen](https://github.com/yonaskolb/XcodeGen)。
+メニューバーに常駐する。ウィンドウも Dock アイコンも無い。
 
-署名済みのリリースはまだ無いので、動かすにはビルドするしかない。理由と、それが
-変わる条件は [ADR 0002](docs/adr/0002-distribution-channel.md) にある。
+ダウンロード配布が無い理由と、それが変わる条件は
+[ADR 0002](docs/adr/0002-distribution-channel.md) にある。
 
 ## 使い方
 
