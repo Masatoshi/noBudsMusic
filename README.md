@@ -135,16 +135,8 @@ just logs    # what the app is doing
 just --list  # everything else
 ```
 
-To sign with a real certificate instead of ad-hoc, put this in `.env`
-(gitignored):
-
-```bash
-NOBUDS_CODE_SIGN_IDENTITY="<certificate SHA-1>"   # security find-identity -v -p codesigning
-NOBUDS_DEVELOPMENT_TEAM="<team id>"
-```
-
-Without it the build is ad-hoc signed, which is fine — the app needs no
-permissions, so there is no TCC grant to lose when the signature changes.
+Builds are ad-hoc signed. That is fine for development — the app requests no
+permissions, so there is no grant to lose when the signature changes.
 
 ## License
 

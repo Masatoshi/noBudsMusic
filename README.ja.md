@@ -127,15 +127,8 @@ just logs    # アプリの動作ログ
 just --list  # その他
 ```
 
-アドホックではなく実際の証明書で署名するには `.env`（gitignore対象）に設定する。
-
-```bash
-NOBUDS_CODE_SIGN_IDENTITY="<証明書のSHA-1>"   # security find-identity -v -p codesigning
-NOBUDS_DEVELOPMENT_TEAM="<チームID>"
-```
-
-未設定ならアドホック署名になるが、それで問題ない。**権限を使わないので、署名が変わっても
-失効するTCC権限が存在しない。**
+ビルドはアドホック署名になる。開発中はそれで問題ない — 権限を要求しないので、
+署名が変わっても失効するものが無い。
 
 ## ライセンス
 
