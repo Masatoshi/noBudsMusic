@@ -67,7 +67,7 @@ final class NowPlayingSink {
                 "nowPlaying.title",
                 comment: "Shown in Control Center while holding the slot"
             ),
-            MPMediaItemPropertyArtwork: Self.artwork(),
+            MPMediaItemPropertyArtwork: Self.makeArtwork(),
             MPNowPlayingInfoPropertyPlaybackRate: 0.0,
             MPMediaItemPropertyPlaybackDuration: 0.0,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
@@ -108,40 +108,47 @@ final class NowPlayingSink {
     /// empty square next to an unfamiliar app name reads as something broken.
     /// Rendering the same glyph as the menu bar item ties the two together.
     ///
+    /// **Rendered eagerly, on the calling thread, and only returned from the
+    /// request handler.** `MPMediaItemArtwork` invokes that handler on
+    /// MediaPlayer's own queue, so a handler that draws — or that is
+    /// `@MainActor`-isolated, as an inner closure of this type would be by
+    /// default — trips Swift's isolation check and traps. That crashed the app
+    /// on every launch until the drawing was hoisted out.
+    nonisolated static func makeArtwork() -> MPMediaItemArtwork {
+        let rendered = renderNote()
+        return MPMediaItemArtwork(boundsSize: rendered.size) { _ in rendered }
+    }
+
     /// Red because this is the one state where the app is doing something, and
     /// because a monochrome note would be indistinguishable from a real track
     /// with missing artwork.
-    static func artwork() -> MPMediaItemArtwork {
-        MPMediaItemArtwork(boundsSize: CGSize(width: 512, height: 512)) { size in
-            let image = NSImage(size: size)
-            image.lockFocus()
-            defer { image.unlockFocus() }
+    nonisolated private static func renderNote() -> NSImage {
+        let size = CGSize(width: 512, height: 512)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        defer { image.unlockFocus() }
 
-            let side = min(size.width, size.height)
-            let configuration = NSImage.SymbolConfiguration(
-                pointSize: side * 0.62,
-                weight: .medium
+        let configuration = NSImage.SymbolConfiguration(
+            pointSize: min(size.width, size.height) * 0.62,
+            weight: .medium
+        )
+        .applying(NSImage.SymbolConfiguration(paletteColors: [.systemRed]))
+
+        guard
+            let note = NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)?
+                .withSymbolConfiguration(configuration)
+        else { return image }
+
+        let noteSize = note.size
+        note.draw(
+            in: NSRect(
+                x: (size.width - noteSize.width) / 2,
+                y: (size.height - noteSize.height) / 2,
+                width: noteSize.width,
+                height: noteSize.height
             )
-            .applying(NSImage.SymbolConfiguration(paletteColors: [.systemRed]))
-
-            guard
-                let note = NSImage(
-                    systemSymbolName: "music.note",
-                    accessibilityDescription: nil
-                )?.withSymbolConfiguration(configuration)
-            else { return image }
-
-            let noteSize = note.size
-            note.draw(
-                in: NSRect(
-                    x: (size.width - noteSize.width) / 2,
-                    y: (size.height - noteSize.height) / 2,
-                    width: noteSize.width,
-                    height: noteSize.height
-                )
-            )
-            return image
-        }
+        )
+        return image
     }
 
     // MARK: - Commands
