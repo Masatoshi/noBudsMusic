@@ -1,0 +1,18 @@
+# Generated from project.yml by XcodeGen. Run `just generate`.
+*.xcodeproj/
+*.xcworkspace/
+
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Local signing identity and other machine-specific overrides
+.env
+
+# Local agent / editor state
+logs/
+.claude/settings.local.json

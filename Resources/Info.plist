@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ja</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<!-- Identity and version come from project.yml so they cannot drift.
+	     TODO: confirm the identifier before the first signed release. Changing
+	     it later resets the Accessibility grant and the login item. -->
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>noBudsMusic</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Background resident app: no Dock icon, no default window. -->
+	<key>LSUIElement</key>
+	<true/>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<!-- nobudsmusic://settings opens the Devices / Diagnostics window in the
+	     running instance. This is a recovery path for when the menu bar item is
+	     hidden. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>jp.kaizudenki.noBudsMusic.settings</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>nobudsmusic</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright (c) 2026 Kaizu Electric Co.,ltd. MIT License.</string>
+	<!-- The app never plays or records audio. Input Monitoring and
+	     Accessibility are TCC grants, not Info.plist usage descriptions. -->
+</dict>
+</plist>

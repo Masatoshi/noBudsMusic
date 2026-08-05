@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Off for now so Phase 2/3 can measure whether the interception mechanism
+	     works at all, without confusing "the mechanism does not work" with "the
+	     sandbox blocked it".
+
+	     Mac App Store distribution is an intent and requires this to be true.
+	     Whether a sandboxed build can still hold Accessibility / Input
+	     Monitoring and create a consuming event tap is unverified — see
+	     docs/adr/0002-distribution-channel.md. Do not flip this without
+	     recording a measurement. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+</dict>
+</plist>

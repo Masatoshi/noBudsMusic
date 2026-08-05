@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # Needs a runner image with Xcode 16+ (Swift 6 / swift-testing) and an SDK
+    # new enough for the macOS 14 deployment target. Adjust the label if this
+    # image is unavailable in the repository's runner pool.
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Install tools
+        run: brew install just xcodegen
+
+      # swift-format ships with the Xcode toolchain; nothing to install.
+      - name: Lint
+        run: just lint
+
+      - name: Generate project
+        run: just generate
+
+      - name: Build
+        run: just build
+
+      - name: Test
+        run: just test
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: noBudsMusic-app
+          path: build/Build/Products/Debug/NoBudsMusic.app
+          if-no-files-found: error
