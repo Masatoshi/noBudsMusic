@@ -215,6 +215,14 @@ App Storeはサンドボックス必須で、想定機構（`CGEventTap` + `IOHI
 
 バンドルID: `jp.kaizudenki.noBudsMusic`
 
+## ドキュメント
+
+- `TECH_RESEARCH.md` — 計測ログ（M1〜M27）。否定的な結果を含む
+- `docs/adr/` — 設計判断3件（遮断機構、配布形態、Now Playing方式）
+- `docs/macos-notes.md` — 開発中に判明したmacOSの挙動。このプロジェクト外でも通用するもの
+- `ARCHITECTURE.md` — 構成
+- `ROADMAP.md` / `TASKS.md` — 経緯と現状
+
 ## ライセンス
 
 MIT

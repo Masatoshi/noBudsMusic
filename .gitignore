@@ -16,6 +16,12 @@ build/
 # Local signing identity and other machine-specific overrides
 .env
 
+# Agent-facing working files. Kept locally so future sessions have the context;
+# not published, because they are instructions to a tool rather than to a reader.
+# The parts worth publishing were moved to docs/macos-notes.md.
+AGENTS.md
+.agents/
+
 # Local agent / editor state
 logs/
 .claude/settings.local.json
