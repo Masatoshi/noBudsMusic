@@ -1,4 +1,5 @@
 # noBudsMusic
+![noBudsMusic icon](assets/no-buds-music-icon.png)
 
 Bluetoothイヤホンをタップしたときに、意図しない Music.app の起動を防ぐ常駐アプリです。
 
