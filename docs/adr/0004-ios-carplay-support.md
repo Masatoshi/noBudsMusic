@@ -19,9 +19,14 @@ That is the macOS line word for word, preceded by the same `No context for
 context-sensitive command`. The cause is identical: no Now Playing destination,
 so the system launches one.
 
-The investigation began as a CarPlay question. It is not one. A headset tap on a
-locked phone reproduces it with no car involved, which removed most of what was
-planned to be measured.
+The investigation began as a CarPlay question, and a headset tap on a locked
+phone reproduces *a* version of it with no car involved. Connecting to a car was
+then measured too, and it turned out to be a different mechanism: no launch
+request is issued at all, and `com.apple.CarPlayApp` launches Music itself.
+
+So there are two separate problems that look like one. The headset case is
+understood and matches macOS. The CarPlay case — the one this started from —
+is not explained by it.
 
 ## Decision
 
@@ -83,7 +88,12 @@ through the App Store. No user-facing setting maps to it.
   entitlement, no behaviour change.
 - The open questions stay in `docs/ios-carplay-music-autolaunch.md`. Whether a
   third-party app can hold the destination on iOS without playing audio still
-  gates the whole thing, and is the first thing the PoC should answer.
+  gates the headset case.
+- The CarPlay case has no candidate fix. Occupying the destination was the plan,
+  and the measurement shows CarPlay never consults it. What remains is a weaker
+  guess — that `com.apple.CarPlayApp` picks Music because nothing else is a
+  candidate, and might pick an app that already holds the destination. That is
+  worth one test in a car and should not be described as more than it is.
 - If iOS does turn out to need background audio, an audio session and a CarPlay
   entitlement, that is the point to revisit option A — with the divergence
   measured instead of predicted.

@@ -149,6 +149,46 @@ occupying the Now Playing destination would not fix the case this is for.
 The headset result says the *mechanism exists* on iOS. It does not say CarPlay
 uses it.
 
+## CarPlay does not use that path
+
+Measured 2026-08-05, 16:57–17:02, connecting to a car. Music.app was launched
+and appeared on the CarPlay screen as playing — showing a U2 album — while no
+audio played, and opening Music on the phone showed it stopped.
+
+`mediaremoted` did not launch it:
+
+| | Headset tap (16:34) | CarPlay connect (17:00) |
+| --- | --- | --- |
+| MediaRemote commands received | 1 | 2 |
+| `MRDLaunchApplicationWithReason` | 1 | **0** |
+
+The launch came from CarPlay itself:
+
+```text
+runningboardd: Acquiring assertion targeting app<com.apple.Music>
+               from originator [osservice<com.apple.CarPlayApp>:5663]
+               with description <RBSAssertionDescriptor|
+               "FBApplicationProcess" ...>
+```
+
+So the mechanism this document opens with — no destination, therefore a launch
+request — **is not what happens when a car connects.** CarPlay launches Music
+directly, without asking `mediaremoted` whether a destination exists.
+
+### What that does and does not rule out
+
+It rules out the explanation. It does not yet rule out the fix.
+
+`com.apple.CarPlayApp` presumably launches *something* to fill its Now Playing
+screen, and Music is what it picks when nothing else is a candidate. Whether it
+would pick an app that already holds the destination is a different question,
+and one the proof of concept can still answer — by holding the destination
+before connecting and seeing which app CarPlay brings up.
+
+That is now the experiment. The reasoning behind it has changed: it is no longer
+"occupy the slot so no launch is requested", because no launch is requested. It
+is "occupy the slot and see whether CarPlay chooses differently."
+
 ## How to answer question 1
 
 Not by capturing a log in the car. The fix does not depend on which process sent
