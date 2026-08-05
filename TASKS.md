@@ -63,12 +63,12 @@ ADR 0001 is Rejected; every task here assumed a HID or event-tap path.
 
 The app works, so this is now actionable.
 
-- todo: Enable `com.apple.security.app-sandbox`, rebuild, run the matrix
-- todo: Confirm `MPNowPlayingInfoCenter` still wins the destination sandboxed —
-  the one that could fail
-- todo: Fix the `DistributedNotificationCenter` name for sandbox (needs an
-  app-group prefix)
-- todo: Confirm `SMAppService` login item still registers
+- done: Enable `com.apple.security.app-sandbox`, rebuild, run the matrix
+- done: `MPNowPlayingInfoCenter` still wins the destination sandboxed (M26)
+- done: `DistributedNotificationCenter` removed rather than app-group-prefixed;
+  the handshake goes through the URL scheme
+- done: `SMAppService` login item registers sandboxed
+- done: Headset tap, Control Center artwork verified on the sandboxed build
 - todo: Decide ADR 0002 (App Store vs OSS on GitHub)
 - todo: Signing for the chosen channel
 - todo: If GitHub, translate `README.md` to English

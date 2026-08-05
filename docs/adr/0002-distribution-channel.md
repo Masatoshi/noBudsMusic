@@ -85,15 +85,20 @@ this decision:
 
 1. `MPNowPlayingInfoCenter` still wins the destination from inside a container.
    This was the one that could have failed, and it does not.
-2. `SMAppService` status reads without error. Registration itself is untested —
-   it is a persistent system change and was left to the owner.
+2. `SMAppService` registers the login item. Verified on the sandboxed build.
 3. `DistributedNotificationCenter` was the one real code change, and it was
    removed rather than worked around: the single-instance handshake now goes
    through the app's own URL scheme, which a sandboxed app can use freely and
    which needs no app group. That simplified the code on both branches.
 4. App Review remains unmeasurable locally.
 
-So the technical case for the store is clear. What is left is a judgement about
+The sandboxed build was then exercised end to end: a headset tap does not launch
+Music.app, the Control Center artwork appears, and Launch at Login registers.
+Nothing is degraded.
+
+So the technical case for the store is clear, and **the sandbox is worth
+adopting whichever channel is chosen** — it costs nothing measurable and keeps
+the option open. What is left is a judgement about
 review risk and about whether the store's distribution and update machinery is
 worth the submission overhead for a single-purpose utility, against simply
 publishing the source.

@@ -455,9 +455,9 @@ the app's own URL scheme, which a sandboxed app can use freely.
 Note the sandbox relocates `UserDefaults` into the container, so settings start
 from defaults. That matters only if an unsandboxed build was ever shipped.
 
-Still needs the owner: a headset tap under the sandbox, the Control Center
-artwork, and registering the login item (a persistent system change, so not done
-unattended).
+Verified by the owner on the sandboxed build: a headset tap does not launch
+Music.app, the Control Center artwork and title appear, and Launch at Login
+registers. **Nothing about the app is degraded by the sandbox.**
 
 ### Still unmeasured
 
