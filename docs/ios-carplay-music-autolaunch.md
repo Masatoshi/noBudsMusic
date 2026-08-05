@@ -448,6 +448,31 @@ Anyone diagnosing this from the symptom alone will conflate them, and a fix
 verified against one says nothing about the other. That was the mistake made
 here, and it cost most of a day.
 
+### Recognising it
+
+A few things make this identifiable from the symptom, which is otherwise easy to
+blame on the car.
+
+**It is often U2.** The album Music reaches for is frequently *Songs of
+Innocence*, pushed into every iTunes library in 2014. It is there whether or not
+anyone wanted it, so when Music starts with nothing of the user's own to play,
+that is what comes out. The car in this investigation displayed exactly that.
+Music the listener never chose, by a band whose album they never added, is a
+strong signature.
+
+**The person often does not use Apple Music at all.** Reports come from people
+who say the app is not even set up, which fits: the launch is a system decision
+about a destination, not a user or a playlist.
+
+**It is not confined to CarPlay.** The same complaint arrives from people using
+only the factory Bluetooth interface, and from people whose complaint is that
+CarPlay prefers Music over the app they actually use. Those are the two routes
+above.
+
+Reports run at least from 2026-07-29 through 2026-08-05, in English and
+Japanese. Dated because this may be specific to a recent iOS; everything
+measured here is iOS 27.0 and nothing here establishes when it started.
+
 ## Unaffected by this document
 
 Whether Apple Music is installed, subscribed, or signed in was not varied.
