@@ -86,19 +86,29 @@ through the App Store. No user-facing setting maps to it.
   free of AppKit is now a constraint rather than a coincidence.
 - The macOS app gains nothing and loses nothing. No audio session, no
   entitlement, no behaviour change.
-- The open questions stay in `docs/ios-carplay-music-autolaunch.md`. Whether a
-  third-party app can hold the destination on iOS without playing audio still
-  gates the headset case.
-- The CarPlay case keeps the same fix for a different reason. No launch request
-  is issued, so "occupy the slot so none is issued" is the wrong account of it.
-  But CarPlay does not launch Music when something else is already playing —
-  the known workaround is to make Spotify the app you last played from — so it
-  is choosing a candidate and defaulting to Music when it finds none. Occupying
-  the slot is still the right shape; what is untested is whether an app that
-  declares `.playing` without producing audio counts as a candidate.
-- If iOS does turn out to need background audio, an audio session and a CarPlay
-  entitlement, that is the point to revisit option A — with the divergence
-  measured instead of predicted.
+- **The approach works and is blocked on residency, not on capability.**
+  Measured in the car: with the app holding the Now Playing slot, connecting
+  launches no Music and plays no audio, and the CarPlay dashboard shows this app
+  instead. One button press holds the slot for at least twelve minutes.
+- **It is not a product until it holds that slot without being opened by hand.**
+  Pressing a button before every drive is no better than stopping Music in
+  CarPlay, which is what people already do. iOS offers no public way to wake a
+  terminated app when a car connects: route-change notifications need the app
+  alive, CoreBluetooth background restoration is BLE-only, and waking on
+  location to detect a car is not something to put in front of review.
+- **The intended route is the CarPlay audio entitlement**, which has the system
+  launch the app on connection. That makes this an app that plays silence and
+  appears among the car's audio apps — the "make Spotify the app you last played
+  from" workaround, with an app that plays nothing. Whether Apple accepts that
+  under guideline 2.5.4 is the open question, and it is a question about review
+  rather than about whether the mechanism works.
+- Applying needs the Developer Program enrolment that is still processing. If
+  the entitlement is refused, iOS ends here: the cause is documented, the fix is
+  demonstrated, and there is no public way to run it unattended. That is a
+  result worth having recorded either way.
+- If it is granted, revisit option A. An audio session, a background mode and a
+  CarPlay entitlement are three things the macOS app has no use for, and at that
+  point the divergence is measured rather than predicted.
 - One finding applies back to macOS and is worth measuring separately: iOS keeps
   the destination across taps without the holder continuing to play. If macOS
   behaves the same, the app may not need to declare `.playing` indefinitely,
