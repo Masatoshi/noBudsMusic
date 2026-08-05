@@ -91,22 +91,29 @@ generalised from one player.
 playing, but M21 showed it is then never chosen as the destination at all — so
 it does not prevent the launch either. Neither fixed state works.
 
-**The resolution is to make the state conditional.** The app declares
-`.playing`, but only holds the destination while nothing else is playing audio,
-and releases it the moment something starts. `AudioActivityMonitor` supplies
-that signal from CoreAudio's per-process audio objects
-(`kAudioProcessPropertyIsRunningOutput`), event-driven, no polling.
+**One intermediate resolution was to make the state conditional, and it was
+abandoned.** The app would declare `.playing` but hold the destination only
+while nothing else was playing audio, releasing it the moment something started.
+`AudioActivityMonitor` was to supply that signal from CoreAudio's per-process
+audio objects (`kAudioProcessPropertyIsRunningOutput`), event-driven and without
+polling. The reasoning was that the bug can only occur during silence, so
+holding the destination only during silence would cover exactly the failing case
+and nothing else.
 
-This works because the bug can only occur during silence: `mediaremoted`
-launches Music precisely when no player holds the destination. Holding it only
-during silence covers exactly the failing case and nothing else.
+M23 killed it. `IsRunningOutput` means "has an output stream", not "is playing":
+Chrome reports it continuously with a paused tab. No public API answers the
+question — `MPNowPlayingInfoCenter` reports this app's own state, and the call
+that names the current Now Playing application is private
+(`MRMediaRemoteGetNowPlayingApplicationPID`).
 
-The remaining shape of the problem: **the app must hold the destination only
-when nothing else wants it**, and must notice when that becomes true again
-without polling. Whether that is expressible with public API is the open
-question. `MPNowPlayingInfoCenter` reports this app's own state, not the
-system's; the API that names the current Now Playing application is private
-(`MRMediaRemoteGetNowPlayingApplicationPID`) and out of scope.
+`AudioActivityMonitor` does not exist in the implementation and should not be
+reintroduced. It is recorded here because this design reads as though it needs
+such a signal, and it does not.
+
+**The actual resolution is `.noSuchContent`.** The app holds the destination
+unconditionally and forwards everything, which dissolves the question of *when*
+to hold it: a real player takes the destination back as soon as it plays (M24),
+so there is nothing to monitor and nothing to release by hand.
 
 ## Constraint: no polling
 
@@ -137,12 +144,13 @@ Three intermediate designs were measured and discarded: `.paused` (never chosen
 as the destination, M21), audio-activity gating (`IsRunningOutput` means "has a
 stream", not "is playing", M23), and `.success` (M19).
 
-Results are in `TECH_RESEARCH.md`. Answered so far: 1 yes (M12), 2 yes (M15),
-4 no — the destination is not stolen from a playing app (M17), 5 yes (M13).
+All five are answered; the results are in `TECH_RESEARCH.md`.
 
-**Question 3 is unanswered and decides whether this ADR can be accepted.** If a
-keyboard media key is swallowed, the app breaks criterion 3 for as long as it is
-on, which outranks the bug it fixes.
+**Question 3 was the one that decided acceptance.** If a keyboard media key were
+swallowed, the app would break criterion 3 for as long as it was on, which
+outranks the bug it fixes. M19 showed `.success` does swallow it; M24 showed
+`.noSuchContent` does not. Confirmed on hardware afterwards — keyboard
+Play/Pause and the volume keys behave normally on MacBookPro18,4, macOS 26.5.2.
 
 ## The old safety property is gone
 
@@ -153,8 +161,10 @@ HID path carried a device identity.
 It was not relaxed — the path it governed was deleted. Commands now arrive with
 no source at all, so there is nothing for such a rule to test.
 
-What replaces it is weaker, and it is now stated plainly: the app
-absorbs Play/Pause whenever Status is ON, and the only control over what it
-absorbs is *when* it holds the destination. Recording that honestly matters more
-than preserving the appearance of a safety property that no longer has anything
-to stand on.
+What replaces it is narrower, and it is now stated plainly: while Status is ON
+the app is the Now Playing destination for every Play/Pause it cannot identify
+the source of. It does not absorb them — each is forwarded with
+`.noSuchContent`, so nothing is disabled. But the app is in the path, and being
+in the path is the property worth re-testing whenever the sink changes.
+Recording that honestly matters more than preserving the appearance of a safety
+property that no longer has anything to stand on.
