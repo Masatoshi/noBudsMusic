@@ -418,6 +418,36 @@ silence delivers precisely that. It is the headset case it gives up, not the one
 this investigation started from. Both should not be expected from one app on
 iOS.
 
+## Two causes, reported as one symptom
+
+Public reports of this describe it as a single problem: connect the phone to the
+car and Apple Music starts, often for people who have never used it. One such
+thread is [here](https://x.com/tjwaggoner/status/2084760072748429712), from
+2026-08-05, where one person is on CarPlay and the other says they do not use
+CarPlay at all — only the factory Bluetooth interface. Both report it starting
+within the past week.
+
+That is second-hand and dated, not measurement, and it is recorded as a report
+rather than as evidence. What makes it worth recording is that the two people
+are describing **different mechanisms**:
+
+| Route | What launches Music | Fixable by holding the slot |
+| --- | --- | --- |
+| Plain Bluetooth / AVRCP | `mediaremoted`, because there is no destination | **Yes** — measured here |
+| CarPlay | `com.apple.CarPlayApp`, directly | Yes, but for a different reason |
+
+The Bluetooth case is the one this document opens with and the one fully
+accounted for: a Play command arrives, there is no Now Playing destination, and
+the system launches the last app that played or Music if there was none.
+
+The CarPlay case never issues a launch request at all. Occupying the slot works
+against both, but for the second it works by giving CarPlay a candidate rather
+than by removing a launch request.
+
+Anyone diagnosing this from the symptom alone will conflate them, and a fix
+verified against one says nothing about the other. That was the mistake made
+here, and it cost most of a day.
+
 ## Unaffected by this document
 
 Whether Apple Music is installed, subscribed, or signed in was not varied.
