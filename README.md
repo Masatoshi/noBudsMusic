@@ -47,30 +47,24 @@ Swift製のバックグラウンド常駐アプリ。メニューバー項目の
 
 ## 動作仕様
 
-グローバルStatusと、デバイスごとの遮断設定の2段階で判定する。
+Now Playing宛先を保持し、Play/Pauseコマンドを受け取って破棄する。
 
 ``` text
-Status OFF
-  → すべてのPlay/Pauseをそのまま通す
-
 Status ON
-  → 遮断対象として登録されたBluetoothデバイス由来のPlay/Pauseだけを遮断
-  → 未登録デバイス、キーボード、USBデバイスなどは変更しない
+  → Now Playing宛先を保持し、Play/Pauseを破棄する
+  → Next / Previous は転送するので、他のジェスチャは動作する
+
+Status OFF
+  → 宛先を解放する。何も破棄しない
 ```
 
-Bluetooth以外のデバイスは遮断対象に選択できない。送信元を確実に判定できない場合は、誤遮断を避けてイベントを通す。
+再生中のアプリがあれば、そのアプリが宛先を取得する。その間このアプリは関与しない。
 
-## デバイス識別
+**デバイスごとの設定は持たない。** MediaRemoteコマンドには送信元デバイスの識別情報が
+無く、すべて `com.apple.bluetoothd` として届くため、機器を区別することが原理的にできない。
+詳細は `docs/adr/0003-now-playing-sink.md`。
 
-デバイス名だけを永続識別子に使わない。IOHIDから取得できる範囲でTransport、Product
-Name、Manufacturer、Vendor ID、Product ID、Serial Number、Location
-ID、Primary Usage Page、Primary Usageを収集し、次の優先順位で安定識別子を生成する。
-
-1. Serial Numberを含む識別子
-2. Vendor ID + Product ID + Product Name
-3. その他のIOHIDプロパティを加えたフォールバック
-
-Location IDは再接続のたびに変わるため識別子には含めない。2と3では同一モデルを複数所持している場合に区別できないので、その可能性をログとDevices画面に明示する。
+**権限を一切必要としない。** アクセシビリティも入力監視も不要。
 
 ## メニューバー
 
@@ -78,7 +72,6 @@ Location IDは再接続のたびに変わるため識別子には含めない。
 noBudsMusic
 
 Status                  ON/OFF
-Devices...
 Show in Menu Bar        ON/OFF
 Launch at Login         ON/OFF
 Diagnostics...
@@ -93,22 +86,21 @@ Quit
 
 ## 成功条件
 
-実機で以下を満たすこと。
+実機で以下を満たすこと。デバイス個別設定を前提とした項目は ADR 0003 により削除した。
 
-1. Status ONかつPixel Buds A-Seriesの個別設定ONで、タップしてもMusic.appが起動しない
-2. Status ONかつRedmi Buds 6 Liteの個別設定ONで、タップしてもMusic.appが起動しない
-3. 個別設定OFFでは通常どおりPlay/Pauseが動作する
-4. グローバルStatus OFFではすべて通常どおり動作する
-5. キーボードのPlay/Pauseは影響を受けない
-6. USBデバイスのPlay/Pauseは影響を受けない
-7. 音量キーは影響を受けない
-8. イヤホンの音声出力とマイクは影響を受けない
-9. AirPlayは影響を受けない
-10. Control CenterのNow Playingを不要に壊さない
-11. メニューバー非表示でも常駐する
-12. アプリ再起動後も設定が保持される
-13. macOS再起動後もログイン時起動する
-14. 同じアプリが二重起動しない
+1. Status ONでイヤホンをタップしてもMusic.appが起動しない
+2. Status OFFでは通常どおり動作する
+3. キーボードのPlay/Pauseは影響を受けない
+4. USBデバイスのPlay/Pauseは影響を受けない
+5. 音量キーは影響を受けない
+6. イヤホンの音声出力とマイクは影響を受けない
+7. AirPlayは影響を受けない
+8. 再生中のアプリの操作を妨げない
+9. Control CenterのNow Playingを不要に壊さない
+10. メニューバー非表示でも常駐する
+11. アプリ再起動後も設定が保持される
+12. macOS再起動後もログイン時起動する
+13. 同じアプリが二重起動しない
 
 ## 現在の実装状況
 

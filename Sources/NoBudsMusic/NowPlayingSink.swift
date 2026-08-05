@@ -17,7 +17,7 @@ import os
 /// what shows up in this log, not by reading the API documentation.
 ///
 /// It knows nothing about which device produced a command. Nothing on this path
-/// does; see `EventFilter.decideForNowPlaying`.
+/// does; see `EventFilter`.
 @MainActor
 final class NowPlayingSink {
     private let filter = EventFilter()
@@ -110,14 +110,8 @@ final class NowPlayingSink {
         // `isEnabled: absorb` rather than a settings read: the sink is only
         // registered while Status is ON, and `absorb` encodes whether this
         // particular command is in scope at all.
-        let outcome = filter.decideForNowPlaying(key: key, isEnabled: absorb)
-
-        let entry = DiagnosticsEntry(
-            key: key,
-            source: .unidentified,
-            outcome: outcome,
-            path: .nowPlaying
-        )
+        let outcome = filter.decide(key: key, isEnabled: absorb)
+        let entry = DiagnosticsEntry(key: key, outcome: outcome)
         diagnostics.append(entry)
         onEvent?(entry)
 

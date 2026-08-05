@@ -10,13 +10,12 @@ import SwiftUI
 @MainActor
 final class SettingsWindowController {
     enum Tab: Hashable {
-        case devices
         case diagnostics
     }
 
     private var window: NSWindow?
     private let model: AppModel
-    private var selectedTab: Tab = .devices
+    private var selectedTab: Tab = .diagnostics
 
     init(model: AppModel) {
         self.model = model
@@ -61,24 +60,16 @@ final class SettingsWindowController {
 
 private struct SettingsRootView: View {
     let model: AppModel
-    @State private var tab: SettingsWindowController.Tab
 
     init(model: AppModel, initialTab: SettingsWindowController.Tab) {
         self.model = model
-        _tab = State(initialValue: initialTab)
     }
 
+    // A single screen rather than a TabView: the Devices tab went away with
+    // per-device rules (ADR 0003), and a one-tab TabView is just chrome.
     var body: some View {
-        TabView(selection: $tab) {
-            DevicesView(model: model)
-                .tabItem { Label("Devices", systemImage: "dot.radiowaves.left.and.right") }
-                .tag(SettingsWindowController.Tab.devices)
-
-            DiagnosticsView(model: model)
-                .tabItem { Label("Diagnostics", systemImage: "stethoscope") }
-                .tag(SettingsWindowController.Tab.diagnostics)
-        }
-        .padding()
-        .frame(minWidth: 560, minHeight: 400)
+        DiagnosticsView(model: model)
+            .padding()
+            .frame(minWidth: 520, minHeight: 320)
     }
 }

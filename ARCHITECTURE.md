@@ -3,41 +3,32 @@
 ## Overview
 
 ```text
-Bluetooth headset -> bluetoothd -> mediaremoted -> ??? -> Music.app
-                                        ^
-                                        |
-                        noBudsMusic observes here (Phase 2)
-                        and blocks here (Phase 3), if it can
+Bluetooth headset -> bluetoothd -> mediaremoted -> Now Playing destination
+                                                          ^
+                                                          |
+                                             noBudsMusic holds it and
+                                             discards Play/Pause
 ```
 
-Where exactly the app can intervene is undecided. See
-`docs/adr/0001-event-interception-approach.md` and `TECH_RESEARCH.md`.
+There is no interception. The app is not in the path; it *is* the destination.
+See `docs/adr/0003-now-playing-sink.md` and `TECH_RESEARCH.md` M11.
 
 ## Two Layers
 
-**`NoBudsMusicCore`** — a static library with no AppKit, CoreGraphics, or IOKit
+**`NoBudsMusicCore`** — a static library with no AppKit or MediaPlayer
 dependency. Everything that *decides* lives here, so it is unit-testable without
-a running app, a paired headset, or a permission grant.
+a running app or a paired headset.
 
-**`NoBudsMusic`** — the app. Menu bar UI, event plumbing, permissions, login
-item. It does plumbing; it does not decide.
-
-Blocking rules live in `NoBudsMusicCore.EventFilter` and nowhere else. This is
-the boundary that lets the interception mechanism be replaced without touching
-the rules, which matters because the mechanism is still an open question.
+**`NoBudsMusic`** — the app. Menu bar UI, the Now Playing sink, login item.
 
 ## Data Flow
 
-1. Observe a media key event.
-2. Resolve the event to a source device (`EventSourceResolving`).
-3. Look up that device's rule (`DeviceRuleStoring`).
-4. Decide (`EventFilter`): global Status AND Bluetooth AND rule on -> block.
-5. Record the decision and its reason (`DiagnosticsLog`).
-6. Anything less than a confident yes at step 2 passes through.
+1. `MPRemoteCommandCenter` delivers a command.
+2. `EventFilter` decides: Status ON and Play/Pause -> absorb, otherwise forward.
+3. `DiagnosticsLog` records the decision and its reason.
+4. The handler returns `.success` (absorbed) or `.noSuchContent` (forwarded).
 
-Step 2 is unimplemented. `UnidentifiedSourceResolver` always returns
-`.unidentified`, so step 4 never blocks. That is the Phase 2/3 boundary, not a
-placeholder to be worked around.
+No device dimension exists at any step. MediaRemote does not carry one.
 
 ## Module Mapping
 
@@ -45,43 +36,28 @@ placeholder to be worked around.
 | --- | --- |
 | App entry, menu bar | `Sources/NoBudsMusic/NoBudsMusicApp.swift` |
 | App state | `Sources/NoBudsMusic/AppModel.swift` |
-| Devices screen | `Sources/NoBudsMusic/Views/DevicesView.swift` |
+| The mechanism | `Sources/NoBudsMusic/NowPlayingSink.swift` |
 | Diagnostics screen | `Sources/NoBudsMusic/Views/DiagnosticsView.swift` |
 | Settings window host | `Sources/NoBudsMusic/Views/SettingsWindowController.swift` |
-| Event tap (Phase 3) | `Sources/NoBudsMusic/MediaKeyEventTap.swift` |
-| Permissions | `Sources/NoBudsMusic/Permissions.swift` |
 | Single instance | `Sources/NoBudsMusic/SingleInstance.swift` |
 | Launch at login | `Sources/NoBudsMusic/LaunchAtLogin.swift` |
-| Decision rules | `Sources/NoBudsMusicCore/EventFilter.swift` |
-| Media key classification | `Sources/NoBudsMusicCore/MediaKey.swift` |
-| Source attribution types | `Sources/NoBudsMusicCore/EventSource.swift` |
-| Device identity | `Sources/NoBudsMusicCore/DeviceIdentity.swift` |
-| Per-device rules | `Sources/NoBudsMusicCore/DeviceRule.swift`, `DeviceRuleStore.swift` |
-| Devices list merge | `Sources/NoBudsMusicCore/DeviceList.swift` |
+| Decision rule | `Sources/NoBudsMusicCore/EventFilter.swift` |
+| Command vocabulary | `Sources/NoBudsMusicCore/MediaKey.swift` |
 | App settings | `Sources/NoBudsMusicCore/AppSettings.swift` |
 | Diagnostics log | `Sources/NoBudsMusicCore/DiagnosticsLog.swift` |
-| Permission model | `Sources/NoBudsMusicCore/PermissionStatus.swift` |
+| Identity | `Sources/NoBudsMusicCore/AppIdentity.swift` |
 
-## Device Identity
+## Removed
 
-A device name alone is not a persistent identifier. `DeviceIdentifier.make`
-builds the strongest available, in fixed priority:
+HID enumeration, the event tap, device identity and per-device rules were
+deleted after `TECH_RESEARCH.md` M11 showed the event never reaches those
+layers. They are in the first commit if the measurement ever needs redoing.
 
-1. `serial` — vendor + product + serial number. Unique per physical unit.
-2. `vendorProduct` — vendor + product + name. Cannot distinguish two of the same
-   model.
-3. `fallback` — transport, manufacturer, name, vendor, product, usage page,
-   usage.
+## Design constraints
 
-Location ID is collected for diagnostics but excluded from the identifier: it
-changes across reconnects, which would orphan the saved rule every time.
+**Passive.** The app registers a destination once and is woken only when a
+command arrives. No timer, no observer loop, no cost at rest. That is the main
+advantage over noTunes and must not be spent on a polling fix for M18.
 
-Tiers 2 and 3 are `isCollisionProne`. That is surfaced in the log when a rule is
-saved and in the Devices screen, per the brief.
-
-## Concurrency
-
-`AppModel` is `@MainActor`. The event path is not and cannot be: a tap callback
-must decide synchronously, under a system timeout, so it cannot await a hop to
-the main actor. Everything the callback touches — `DiagnosticsLog`,
-`DeviceRuleStoring`, the enabled flag — is lock-guarded and `Sendable`.
+**No permissions.** `MPRemoteCommandCenter` is not gated by TCC. The app needs
+neither Accessibility nor Input Monitoring.

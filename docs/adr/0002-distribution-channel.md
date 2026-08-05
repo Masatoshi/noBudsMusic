@@ -64,6 +64,12 @@ Recorded now so the evaluation does not start from scratch.
 Not blockers, confirmed: `SMAppService` (launch at login) works sandboxed, and
 `LSUIElement` menu bar apps are acceptable on the store.
 
+**Update 2026-08-05:** ADR 0001 was rejected and the HID / event-tap code
+deleted, so the app no longer uses any TCC-gated API. Questions 1-3 below are
+moot — there are no grants to lose under the sandbox. `MPRemoteCommandCenter`
+and `SMAppService` are both sandbox-compatible. Only question 4, App Review's
+view of the app's purpose, remains.
+
 Unverified, to be measured after the implementation works:
 
 1. Can a sandboxed build be granted Accessibility?

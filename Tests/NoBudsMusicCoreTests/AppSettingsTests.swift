@@ -48,82 +48,12 @@ struct AppSettingsTests {
     }
 }
 
-@Suite("DeviceRuleStore")
-struct DeviceRuleStoreTests {
-    private func rule(_ name: String, blocks: Bool = true) -> DeviceRule {
-        DeviceRule(
-            identifier: DeviceIdentifier(rawValue: "s:\(name)", tier: .serial),
-            blocksPlayPause: blocks,
-            displayName: name,
-            transport: .bluetooth
-        )
-    }
-
-    @Test("Rules survive a store round trip")
-    func roundTrip() {
-        let defaults = makeDefaults()
-        let store = UserDefaultsDeviceRuleStore(defaults: defaults)
-        store.upsert(rule("Pixel Buds A-Series"))
-        store.upsert(rule("Redmi Buds 6 Lite", blocks: false))
-
-        let reloaded = UserDefaultsDeviceRuleStore(defaults: defaults)
-        #expect(reloaded.allRules().count == 2)
-        #expect(
-            reloaded.rule(for: DeviceIdentifier(rawValue: "s:Pixel Buds A-Series", tier: .serial))?
-                .blocksPlayPause == true
-        )
-    }
-
-    @Test("Upsert replaces rather than duplicates")
-    func upsertReplaces() {
-        let store = UserDefaultsDeviceRuleStore(defaults: makeDefaults())
-        store.upsert(rule("Pixel Buds A-Series", blocks: true))
-        store.upsert(rule("Pixel Buds A-Series", blocks: false))
-
-        #expect(store.allRules().count == 1)
-        #expect(store.allRules()[0].blocksPlayPause == false)
-    }
-
-    @Test("Removing a rule removes it from the reloaded store")
-    func removePersists() {
-        let defaults = makeDefaults()
-        let store = UserDefaultsDeviceRuleStore(defaults: defaults)
-        store.upsert(rule("Pixel Buds A-Series"))
-        store.remove(DeviceIdentifier(rawValue: "s:Pixel Buds A-Series", tier: .serial))
-
-        #expect(UserDefaultsDeviceRuleStore(defaults: defaults).allRules().isEmpty)
-    }
-
-    // Losing rules is bad; refusing to start is worse. Nothing is blocked by
-    // default, so an empty set is the safe failure.
-    @Test("Corrupt stored data yields no rules rather than a crash")
-    func corruptDataIsSurvivable() {
-        let defaults = makeDefaults()
-        defaults.set(Data("not json".utf8), forKey: UserDefaultsDeviceRuleStore.defaultsKey)
-
-        #expect(UserDefaultsDeviceRuleStore(defaults: defaults).allRules().isEmpty)
-    }
-
-    @Test("A rule for a non-Bluetooth device is never effective")
-    func nonBluetoothRuleIneffective() {
-        let usbRule = DeviceRule(
-            identifier: DeviceIdentifier(rawValue: "s:kbd", tier: .serial),
-            blocksPlayPause: true,
-            displayName: "Magic Keyboard",
-            transport: .usb
-        )
-        #expect(!usbRule.isEffective)
-    }
-}
-
 @Suite("DiagnosticsLog")
 struct DiagnosticsLogTests {
     private func entry() -> DiagnosticsEntry {
         DiagnosticsEntry(
             key: .play,
-            source: .unidentified,
-            outcome: FilterOutcome(decision: .pass, reason: .sourceUnidentified),
-            path: .hid
+            outcome: FilterOutcome(decision: .pass, reason: .statusOff)
         )
     }
 
@@ -143,23 +73,6 @@ struct DiagnosticsLogTests {
         log.setEnabled(true)
         log.append(entry())
         #expect(log.recent().count == 1)
-    }
-
-    // The HID path cannot consume an event, so a blocking decision observed
-    // there did not actually block anything. Reporting otherwise would make the
-    // Phase 3 comparison meaningless.
-    @Test("A blocking outcome on the HID path is not a block")
-    func hidPathCannotBlock() {
-        let entry = DiagnosticsEntry(
-            key: .play,
-            source: .unidentified,
-            outcome: FilterOutcome(decision: .block, reason: .deviceBlocked),
-            path: .hid
-        )
-        #expect(entry.outcome.isBlocked)
-        #expect(!entry.wasBlocked)
-        #expect(!ObservationPath.hid.canBlock)
-        #expect(ObservationPath.eventTap.canBlock)
     }
 
     @Test("Recent returns newest first")

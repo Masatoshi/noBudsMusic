@@ -65,8 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // A second copy would install a second event tap and the two would
-        // fight over the same events.
+        // A second copy would fight this one for the Now Playing destination.
         if SingleInstance.yieldToExistingInstance() {
             NSApp.terminate(nil)
             return
@@ -125,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showSettings() {
         logger.info("showing settings window")
-        settingsWindow.show(tab: .devices)
+        settingsWindow.show(tab: .diagnostics)
     }
 }
 
@@ -140,8 +139,6 @@ private struct MenuContent: View {
             "Status",
             isOn: Binding(get: { model.settings.isEnabled }, set: { model.setEnabled($0) })
         )
-
-        Button("Devices...") { windows.show(tab: .devices) }
 
         Divider()
 

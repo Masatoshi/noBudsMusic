@@ -9,8 +9,8 @@ import os
 /// Finder and Spotlight normally activate an existing instance rather than
 /// launching a second one, which arrives as `applicationShouldHandleReopen`.
 /// This handles the cases where that does not apply: a copy launched from a
-/// different path, or `open -n`. Without it the second instance would install a
-/// second event tap and both would fight over the same events.
+/// different path, or `open -n`. Without it both instances would claim the Now
+/// Playing destination and fight over it.
 enum SingleInstance {
     /// Posted to the running instance to ask it to surface its UI.
     static let showSettingsNotification = Notification.Name(

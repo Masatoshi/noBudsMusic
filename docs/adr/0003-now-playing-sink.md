@@ -27,10 +27,16 @@ The requirement is therefore not descoped for convenience; it is **impossible on
 the only surviving path**. The global Status toggle becomes the whole control
 surface.
 
-`DeviceIdentifier`, `DeviceRule`, `DeviceRuleStore` and the Devices screen stay
-for now — they are the instrument that produced M11 and would still be needed if
-a headset ever turns out to use HID over GATT — but they no longer gate
-anything.
+`DeviceIdentifier`, `DeviceRule`, `DeviceRuleStore`, the Devices screen,
+`HIDDeviceMonitor` and `MediaKeyEventTap` have been deleted. They controlled
+nothing once this decision was made, and keeping ~1,400 lines of inert code to
+hedge against a headset that might use HID over GATT is the speculative
+future-proofing this project rules out. They remain in the first commit if
+the measurement ever needs reproducing.
+
+Removing them also removed every TCC dependency: the app now needs neither
+Accessibility nor Input Monitoring. That materially improves ADR 0002's inputs,
+which is noted there rather than reopened here.
 
 ### 2. Become the Now Playing destination and discard the command
 
@@ -50,16 +56,21 @@ risks, in descending order of how likely they are to sink the approach.
 2. **Swallowing the keyboard.** Keyboard media keys route through the same
    mechanism. As the destination, the app receives and discards those too, which
    is the blanket disabling criteria 5, 6 and 7 forbid.
-3. **Not becoming the destination at all.** `MPNowPlayingInfoCenter` may require
-   the process to actually produce audio before macOS treats it as a player.
-   Unverified.
-4. **Being displaced.** Even if it works, any real player that starts will take
-   the destination back — correct behaviour, but it means the fix is absent
-   exactly when a player is running, which may be fine or may not.
+3. ~~**Not becoming the destination at all.**~~ Cleared by M12: public API alone
+   is enough, without producing audio.
+4. **Being displaced, and not coming back.** Cleared as a correctness concern by
+   M17 — a real player does take the destination and this app yields, which is
+   what should happen. But M18 shows the app never reclaims it afterwards, so
+   the protection is absent from then on.
 
-Risks 1 and 2 are the same problem: **the app must hold the destination only
-when nothing else wants it.** Whether that is expressible with public API is the
-open question. `MPNowPlayingInfoCenter` reports this app's own state, not the
+Risk 1 is **cleared** by M17: an actively playing app takes the destination and
+this app yields. Risk 2 remains unverified and is now the single thing standing
+between this design and acceptance.
+
+The remaining shape of the problem: **the app must hold the destination only
+when nothing else wants it**, and must notice when that becomes true again
+without polling. Whether that is expressible with public API is the open
+question. `MPNowPlayingInfoCenter` reports this app's own state, not the
 system's; the API that names the current Now Playing application is private
 (`MRMediaRemoteGetNowPlayingApplicationPID`) and out of scope.
 
@@ -85,22 +96,24 @@ a playing app. Any fix for M18 has to be event-driven or it is not worth having.
 5. Can the destination be relinquished and re-claimed, so it can be held
    conditionally?
 
-Results go in `TECH_RESEARCH.md`. Question 5 decides whether this ADR can be
-accepted: without it, risks 1 and 2 are unmitigated and the approach fails the
-success criteria even if it fixes the reported bug.
+Results are in `TECH_RESEARCH.md`. Answered so far: 1 yes (M12), 2 yes (M15),
+4 no — the destination is not stolen from a playing app (M17), 5 yes (M13).
 
-## The safety property is not weakened
+**Question 3 is unanswered and decides whether this ADR can be accepted.** If a
+keyboard media key is swallowed, the app breaks criterion 3 for as long as it is
+on, which outranks the bug it fixes.
 
-the project goals requires that an event whose source is `.unidentified` is never
-blocked. This path never identifies a source, so routing it through the existing
-`EventFilter.decide(key:source:rule:isEnabled:)` would either always pass — doing
-nothing — or require gutting the rule.
+## The old safety property is gone
 
-Neither is acceptable. Instead the Now Playing path gets its own explicit
-contract, `EventFilter.decideForNowPlaying(key:isEnabled:)`, whose inputs do not
-include a source because none exists. The device-attributed rule keeps its
-safety property, tests and all, and continues to govern any path that *does*
-carry a source.
+This project used to require that an event whose source is `.unidentified`
+is never blocked. That rule protected keyboards and was enforceable because the
+HID path carried a device identity.
 
-That makes the trade-off visible in the type signature rather than hiding it
-behind a weakened rule.
+It was not relaxed — the path it governed was deleted. Commands now arrive with
+no source at all, so there is nothing for such a rule to test.
+
+What replaces it is weaker, and it is now stated plainly: the app
+absorbs Play/Pause whenever Status is ON, and the only control over what it
+absorbs is *when* it holds the destination. Recording that honestly matters more
+than preserving the appearance of a safety property that no longer has anything
+to stand on.
