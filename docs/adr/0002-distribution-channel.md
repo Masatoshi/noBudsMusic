@@ -1,7 +1,6 @@
 # ADR 0002: Distribution channel
 
-- Status: **Accepted** — the sequencing is decided. The channel itself is
-  deliberately deferred.
+- Status: **Accepted** — open source on GitHub first; the App Store stays open.
 - Date: 2026-08-05
 - Deciders: repository owner
 
@@ -22,6 +21,26 @@ a distribution channel for a mechanism that may not exist would constrain the
 implementation for nothing.
 
 ## Decision
+
+**Publish the source on GitHub first. Revisit the App Store later, on evidence.**
+
+Decided 2026-08-05, after the implementation worked and the sandbox measurement
+came back clean (M26). There is no technical constraint either way: the app uses
+no TCC-gated API, runs sandboxed with nothing degraded, and would need only
+Developer ID or App Store signing to ship through either channel.
+
+The reason to lead with GitHub is not that the store is blocked — it is that the
+store's value (discovery, updates, trust) is worth paying review overhead for
+once the thing has demonstrated it is reliable and that anyone wants it. Neither
+is established after one day and two machines. Publishing the source costs
+nothing, invites the scrutiny that would establish both, and forecloses nothing:
+the same bundle identifier and the same sandboxed build can be submitted later.
+
+What would move it to the store: the app proving stable over time, and either
+demand from people who will not build from source, or a reason to want automatic
+updates.
+
+### The original framing, kept because the sequencing mattered
 
 **Build first, choose the channel afterwards.**
 

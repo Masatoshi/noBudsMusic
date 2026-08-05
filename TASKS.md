@@ -30,13 +30,13 @@ Kept here because the reasons matter more than the outcomes.
 
 ## Open
 
-- Decide ADR 0002: Mac App Store or open source with direct distribution. The
-  technical case is settled; what remains is review risk versus submission
-  overhead.
+- done: ADR 0002 decided — open source on GitHub first, App Store revisited on
+  evidence of reliability and demand. No technical constraint either way.
 - Developer ID signing and notarization, if distributing directly. The app is
   currently signed with a development certificate, which is fine for machines it
   is copied to over `rsync` but not for anything downloaded.
-- English `README.md`, if the repository becomes public.
+- Developer ID signing and notarization, so the built app can be distributed to
+  people who will not build from source.
 
 ## Not planned
 
