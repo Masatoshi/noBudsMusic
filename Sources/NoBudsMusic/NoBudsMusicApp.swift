@@ -115,14 +115,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 private struct MenuContent: View {
-    // Not `@Bindable`: every mutation goes through an explicit `AppModel` method
-    // so persistence and the sink stay in sync.
+    // Reads go through `@AppStorage`, never through `AppModel`.
+    //
+    // Measured, twice: reading `@Observable` state anywhere SwiftUI builds the
+    // app's main menu — the scene body *or* the MenuBarExtra content — pins the
+    // main thread, looping through `scenesDidChange -> makeMainMenu ->
+    // invalidateProperties -> updateViewGraph`. Moving the scene body to
+    // `@AppStorage` fixed one trigger and left this one.
+    //
+    // Writes still go through `AppModel`, which owns persistence and the sink,
+    // and whose setters drop no-op writes. `@AppStorage` then picks the new
+    // value up from `UserDefaults`.
     let model: AppModel
+
+    @AppStorage(SettingsKey.isEnabled)
+    private var isEnabled = AppSettings.default.isEnabled
+    @AppStorage(SettingsKey.showsMenuBarItem)
+    private var showsMenuBarItem = AppSettings.default.showsMenuBarItem
+    @AppStorage(SettingsKey.launchesAtLogin)
+    private var launchesAtLogin = AppSettings.default.launchesAtLogin
 
     var body: some View {
         Toggle(
             "menu.block",
-            isOn: Binding(get: { model.settings.isEnabled }, set: { model.setEnabled($0) })
+            isOn: Binding(get: { isEnabled }, set: { model.setEnabled($0) })
         )
 
         Divider()
@@ -130,7 +146,7 @@ private struct MenuContent: View {
         Toggle(
             "menu.showInMenuBar",
             isOn: Binding(
-                get: { model.settings.showsMenuBarItem },
+                get: { showsMenuBarItem },
                 set: { model.setShowsMenuBarItem($0) }
             )
         )
@@ -139,7 +155,7 @@ private struct MenuContent: View {
         Toggle(
             "menu.launchAtLogin",
             isOn: Binding(
-                get: { model.settings.launchesAtLogin },
+                get: { launchesAtLogin },
                 set: { model.setLaunchesAtLogin($0) }
             )
         )
