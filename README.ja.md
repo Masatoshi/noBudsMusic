@@ -49,16 +49,11 @@ YouTube をイヤホンから再開できなくなります。**この戻り値�
 
 macOS 14以降で動作する可能性がありますが、検証は macOS 26 / Apple Silicon のみです。
 
-### ソースからビルド
+### Mac App Store
 
-現時点で動作する唯一の方法です。Xcode 26系とビルドツール2つを使います。
+[Mac App StoreでnoBudsMusicを入手](https://apps.apple.com/us/app/nobudsmusic/id6800704078)
 
-```bash
-brew install just xcodegen
-just run
-```
-
-メニューバーに常駐します。ウィンドウも Dock アイコンもありません。
+Apple側の公開処理中は、地域によってストアページの反映に時間がかかる場合があります。
 
 ### Homebrew
 
@@ -72,18 +67,20 @@ brew install --cask no-buds-music
 Homebrew 6系では非公式タップの読み込みに確認を求められることがあります。その場合は
 `brew trust --cask masatoshi/nobudsmusic/no-buds-music` を実行してください。
 
-**ただし現時点ではインストール後に起動できません。** リリース資産は Apple Development
-証明書で署名しただけで、notarization を通していません。Homebrew はダウンロードした
-アプリに `com.apple.quarantine` を付けるため、Gatekeeper が初回起動を拒否します。
+Homebrew caskは、GitHub Releasesで公開しているDeveloper ID署名・notarization済みの
+ビルドをインストールします。配布形態の判断は
+[ADR 0002](docs/adr/0002-distribution-channel.md) にあります。
 
-```text
-$ spctl -a -t exec NoBudsMusic.app
-NoBudsMusic.app: rejected
-origin=Apple Development: ...
+### ソースからビルド
+
+開発にはXcode 26系とビルドツール2つを使います。
+
+```bash
+brew install just xcodegen
+just run
 ```
 
-Developer ID での署名と notarization を導入するまでは、上のビルド手順を使ってください。
-配布形態の判断は [ADR 0002](docs/adr/0002-distribution-channel.md) にあります。
+メニューバーに常駐します。ウィンドウも Dock アイコンもありません。
 
 ## 使い方
 
