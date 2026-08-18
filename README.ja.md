@@ -18,6 +18,11 @@ mediaremoted: Destination app com.apple.Music not available for command
 
 `com.apple.rcd` を無効化しても発生します。
 
+Musicをすぐ終了させても、起動そのものが問題になる場合があります。たとえばMusicに
+スクリーンタイムの「App使用時間の制限」を設定していると、意図しない起動だけで制限警告が
+表示されることがあります。このアプリは、起動後にMusicが残るかどうかではなく、起動要求
+そのものに対処します。
+
 ## 仕組み
 
 **このアプリは何も遮断しません。**
@@ -114,16 +119,19 @@ Redmi Buds 6 Lite と Pixel Buds A-Series、実機2台で確認しました。
 
 ## noTunes との関係
 
-[noTunes](https://github.com/tombonez/noTunes) はもっと広い問題を解いています。
-アイコンのクリック、リンク、イヤホンのタップ、**何がきっかけでも** Music.app を
-開かせません。
+[noTunes](https://github.com/tombonez/noTunes) とnoBudsMusicは、関連していますが異なる
+用途を対象としています。noTunesは、さまざまな起動経路からMusic.appが開くことを幅広く
+防ぎ、必要に応じて別のプレイヤーへ置き換えることもできます。Musicを一切開かせたくない
+場合に適しています。
 
-このアプリが対処するのは原因のひとつだけです。`mediaremoted` がプレイヤーを起動する
-条件を消すだけで、それ以外の経路には何もしません。
+noBudsMusicは、Bluetoothメディア操作による意図しない起動だけに対象を絞っています。
+起動処理が始まった後のMusicに作用するのではなく、あらかじめNow Playingの参照先になり、
+Musicを起動要求する必要がない状態を作る別の仕組みです。意図してMusicを開く操作は
+妨げません。
 
-つまり代替関係ではありません。Music.app を一切開かせたくないなら noTunes のほうが
-守備範囲がずっと広くなります。このアプリが解決するのは、Bluetoothイヤホンのタップ
-だけです。
+この違いは、Musicの起動そのものがスクリーンタイムの制限警告などを発生させる場合に
+重要です。Musicの起動を幅広く防ぐならnoTunes、通常利用を残しながらBluetooth由来の
+誤起動だけ防ぐならnoBudsMusic、という用途の違いです。
 
 ## ドキュメント
 

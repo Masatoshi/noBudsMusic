@@ -18,6 +18,11 @@ mediaremoted: Destination app com.apple.Music not available for command
 
 Disabling `com.apple.rcd` does not help.
 
+The launch itself can be disruptive even if Music is closed immediately. For
+example, when Music has a Screen Time App Limit, an unintended launch can
+trigger the limit alert. This app addresses the launch request itself, not just
+whether Music remains open afterwards.
+
 ## How it works
 
 **This app blocks nothing.**
@@ -121,16 +126,20 @@ Tested on two machines with Redmi Buds 6 Lite and Pixel Buds A-Series:
 
 ## Relationship to noTunes
 
-[noTunes](https://github.com/tombonez/noTunes) solves a broader problem: it stops
-Music.app from opening whatever prompted it — clicking the icon, following a
-link, a headset tap, anything.
+[noTunes](https://github.com/tombonez/noTunes) and noBudsMusic address related
+but different needs. noTunes is designed to keep Music.app from opening across
+a broad range of launch paths and can optionally redirect a launch to another
+player. It is a good fit when you do not want Music to open at all.
 
-This app addresses one specific cause. It removes the condition that makes
-`mediaremoted` launch a player, and does nothing about any other route into
-Music.app.
+noBudsMusic focuses narrowly on unintended Bluetooth media commands. It uses a
+different mechanism: it supplies a Now Playing destination before Music is
+requested, rather than acting on Music after the launch begins. Intentional
+launches of Music still work.
 
-They are not substitutes. If you want Music.app never to open, noTunes covers far
-more ground. This app addresses the Bluetooth headset tap and nothing else.
+This distinction matters when the launch itself has an effect, such as
+triggering a Screen Time App Limit alert. Choose noTunes for broad launch
+prevention, or noBudsMusic when you want to keep intentional Music use while
+preventing this specific Bluetooth-triggered case.
 
 ## Documentation
 
