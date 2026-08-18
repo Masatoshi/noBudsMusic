@@ -1,6 +1,7 @@
 # ADR 0002: Distribution channel
 
-- Status: **Accepted** — open source on GitHub first; the App Store stays open.
+- Status: **Accepted** — GitHub/Homebrew shipped; Mac App Store approved,
+  storefront rollout pending; updated 2026-08-18.
 - Date: 2026-08-05
 - Deciders: repository owner
 
@@ -39,6 +40,22 @@ the same bundle identifier and the same sandboxed build can be submitted later.
 What would move it to the store: the app proving stable over time, and either
 demand from people who will not build from source, or a reason to want automatic
 updates.
+
+### Update 2026-08-18: GitHub/Homebrew shipped; Mac App Store approved
+
+The sequencing above was followed and has run its course. Current state,
+checked against the live GitHub artifact and Apple's review result:
+
+- **GitHub / Homebrew.** The v0.1.0 release asset is signed with Developer ID
+  (KAIZU ELECTRIC CORPORATION, 49T3S59LJ9), notarized and stapled;
+  `spctl -a -t exec` accepts it. The `masatoshi/noBudsMusic` tap installs that
+  build.
+- **Mac App Store.** Approved for distribution as id 6800704078. Public
+  storefront availability is still propagating and has not yet been verified.
+
+"Revisit the App Store later, on evidence" is therefore resolved: the owner
+revisited, gained approval, and initiated the release. The reasoning below is
+kept as the record of why GitHub came first.
 
 ### The original framing, kept because the sequencing mattered
 

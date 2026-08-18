@@ -48,8 +48,8 @@ Consequences:
   needed.** No Accessibility, no Input Monitoring, no event tap.
 - **No polling.** No timer and no observer loop; the app is woken only when a
   command arrives.
-- **Media and volume keys are unaffected**, because it only ever answers
-  `.noSuchContent`.
+- **Media and volume keys are unaffected.** It only ever answers
+  `.noSuchContent`, so existing behaviour is unchanged.
 - **No per-device settings**, and there cannot be: a MediaRemote command carries
   no device identity. Every headset arrives as `com.apple.bluetoothd`.
 
@@ -59,10 +59,10 @@ May work on macOS 14 and later; only tested on macOS 26 / Apple Silicon.
 
 ### Mac App Store
 
-[Get noBudsMusic on the Mac App Store](https://apps.apple.com/us/app/nobudsmusic/id6800704078)
-
 The store page may take time to appear in every region while Apple completes
 the release rollout.
+
+[Get noBudsMusic on the Mac App Store](https://apps.apple.com/us/app/nobudsmusic/id6800704078)
 
 ### Homebrew
 
@@ -147,7 +147,7 @@ preventing this specific Bluetooth-triggered case.
 | --- | --- |
 | [`docs/macos-notes.md`](docs/macos-notes.md) | macOS behaviour observed during development. Applies outside this project |
 | [`TECH_RESEARCH.md`](TECH_RESEARCH.md) | Measurement log, M1-M27, negative results included |
-| [`docs/adr/`](docs/adr/) | Three decisions: the interception mechanism, distribution, the Now Playing sink |
+| [`docs/adr/`](docs/adr/) | Four decisions: the interception mechanism, distribution, the Now Playing sink, iOS/CarPlay |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Layout and design constraints |
 
 **The approaches that did not work are recorded too.** IOHIDManager, CGEventTap,

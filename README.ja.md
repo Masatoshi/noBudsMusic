@@ -56,9 +56,9 @@ macOS 14以降で動作する可能性がありますが、検証は macOS 26 / 
 
 ### Mac App Store
 
-[Mac App StoreでnoBudsMusicを入手](https://apps.apple.com/us/app/nobudsmusic/id6800704078)
-
 Apple側の公開処理中は、地域によってストアページの反映に時間がかかる場合があります。
+
+[Mac App StoreでnoBudsMusicを入手](https://apps.apple.com/us/app/nobudsmusic/id6800704078)
 
 ### Homebrew
 
@@ -139,7 +139,7 @@ Musicを起動要求する必要がない状態を作る別の仕組みです。
 | --- | --- |
 | [`docs/macos-notes.md`](docs/macos-notes.md) | 開発中に判明したmacOSの挙動。このプロジェクト外でも通用する |
 | [`TECH_RESEARCH.md`](TECH_RESEARCH.md) | 実測ログ M1〜M27。否定的な結果を含む |
-| [`docs/adr/`](docs/adr/) | 設計判断3件（遮断機構、配布形態、Now Playing方式） |
+| [`docs/adr/`](docs/adr/) | 設計判断4件（遮断機構、配布形態、Now Playing方式、iOS/CarPlay対応） |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | 構成と設計上の制約 |
 
 **試して動かなかった手法も記録しています。** IOHIDManager、CGEventTap、
