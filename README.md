@@ -52,17 +52,12 @@ Consequences:
 
 May work on macOS 14 and later; only tested on macOS 26 / Apple Silicon.
 
-### Build from source
+### Mac App Store
 
-Building from source is currently the only way to run it, and it needs
-Xcode 26 and two build tools:
+[Get noBudsMusic on the Mac App Store](https://apps.apple.com/us/app/nobudsmusic/id6800704078)
 
-```bash
-brew install just xcodegen
-just run
-```
-
-The app appears in the menu bar; there is no window and no Dock icon.
+The store page may take time to appear in every region while Apple completes
+the release rollout.
 
 ### Homebrew
 
@@ -76,20 +71,20 @@ brew install --cask no-buds-music
 Homebrew 6 may ask you to trust a third-party tap before it will load the cask.
 If it does, run `brew trust --cask masatoshi/nobudsmusic/no-buds-music`.
 
-**It will not launch on first run after install, though.** The release is
-signed with an Apple Development certificate and has not been notarized.
-Homebrew attaches `com.apple.quarantine` to what it downloads, so Gatekeeper
-refuses the first launch:
+The cask installs the Developer ID-signed and notarized build published on
+GitHub Releases. See [ADR 0002](docs/adr/0002-distribution-channel.md) for the
+distribution reasoning.
 
-```text
-$ spctl -a -t exec NoBudsMusic.app
-NoBudsMusic.app: rejected
-origin=Apple Development: ...
+### Build from source
+
+Development requires Xcode 26 and two build tools:
+
+```bash
+brew install just xcodegen
+just run
 ```
 
-Until the build is signed with a Developer ID and notarized, use the source
-build above. See [ADR 0002](docs/adr/0002-distribution-channel.md) for the
-distribution reasoning.
+The app appears in the menu bar; there is no window and no Dock icon.
 
 ## Using it
 
