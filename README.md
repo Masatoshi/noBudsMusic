@@ -18,6 +18,11 @@ mediaremoted: Destination app com.apple.Music not available for command
 
 Disabling `com.apple.rcd` does not help.
 
+This project started from the author's own experience of the same problem:
+simply connecting a Bluetooth headset was enough to launch Music.app, even
+when no playback was intended. The launch itself was the problem, not just the
+things that happened after it opened.
+
 The launch itself can be disruptive even if Music is closed immediately. For
 example, when Music has a Screen Time App Limit, an unintended launch can
 trigger the limit alert. This app addresses the launch request itself, not just
