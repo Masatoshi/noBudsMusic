@@ -1,7 +1,7 @@
 # noBudsMusic
 ![noBudsMusic icon](assets/no-buds-music-icon.png)
 
-Stops Music.app from launching itself when you tap a Bluetooth headset.
+Stops Music.app from launching itself when you tap a Bluetooth headset or when it reconnects.
 
 [日本語](README.ja.md)
 
